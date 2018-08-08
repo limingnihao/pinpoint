@@ -18,30 +18,34 @@ package com.navercorp.pinpoint.collector.dao.hbase;
 
 import com.navercorp.pinpoint.collector.dao.MapResponseTimeDao;
 import com.navercorp.pinpoint.collector.dao.hbase.statistics.*;
+import com.navercorp.pinpoint.common.hbase.HbaseOperations2;
 import com.navercorp.pinpoint.common.hbase.TableNameProvider;
 import com.navercorp.pinpoint.common.server.util.AcceptedTimeService;
-import com.navercorp.pinpoint.common.hbase.HbaseOperations2;
 import com.navercorp.pinpoint.common.trace.ServiceType;
 import com.navercorp.pinpoint.common.util.ApplicationMapStatisticsUtils;
 import com.navercorp.pinpoint.common.util.TimeSlot;
-
 import com.sematext.hbase.wd.RowKeyDistributorByHashPrefix;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Increment;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Scan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.navercorp.pinpoint.common.hbase.HBaseTables.*;
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.MAP_STATISTICS_SELF_VER2_CF_COUNTER;
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.MAP_STATISTICS_SELF_VER2_STR;
 
 /**
  * Save response time data of WAS
- * 
+ *
  * @author netspider
  * @author emeroad
  * @author jaehong.kim
@@ -83,7 +87,7 @@ public class HbaseMapResponseTimeDao implements MapResponseTimeDao {
     }
 
     @Override
-    public void received(String applicationName, ServiceType applicationServiceType, String agentId, int elapsed, boolean isError) {
+    public void received(String applicationName, ServiceType applicationServiceType, String agentId, int elapsed, boolean isError, long total) {
         if (applicationName == null) {
             throw new NullPointerException("applicationName must not be null");
         }
@@ -104,12 +108,16 @@ public class HbaseMapResponseTimeDao implements MapResponseTimeDao {
         final ColumnName selfColumnName = new ResponseColumnName(agentId, slotNumber);
         if (useBulk) {
             TableName mapStatisticsSelfTableName = tableNameProvider.getTableName(MAP_STATISTICS_SELF_VER2_STR);
-            bulkIncrementer.increment(mapStatisticsSelfTableName, selfRowKey, selfColumnName);
+//            bulkIncrementer.increment(mapStatisticsSelfTableName, selfRowKey, selfColumnName, 1l);
+            // shiming.li update
+            bulkIncrementer.increment(mapStatisticsSelfTableName, selfRowKey, selfColumnName, total);
         } else {
             final byte[] rowKey = getDistributedKey(selfRowKey.getRowKey());
             // column name is the name of caller app.
             byte[] columnName = selfColumnName.getColumnName();
-            increment(rowKey, columnName, 1L);
+//            increment(rowKey, columnName, 1L);
+            // shiming.li update
+            increment(rowKey, columnName, total);
         }
     }
 
@@ -125,8 +133,8 @@ public class HbaseMapResponseTimeDao implements MapResponseTimeDao {
     }
 
 
-    @Override
-    public void flushAll() {
+    //    @Override
+    public void flushAll2() {
         if (!useBulk) {
             throw new IllegalStateException("useBulk is " + useBulk);
         }
@@ -140,6 +148,47 @@ public class HbaseMapResponseTimeDao implements MapResponseTimeDao {
             }
             hbaseTemplate.increment(tableName, increments);
         }
+    }
+
+    // shiming.li update
+    @Override
+    public void flushAll() {
+        Map<RowInfo, Long> remove = bulkIncrementer.remove();
+        for (Map.Entry<RowInfo, Long> entry : remove.entrySet()) {
+            final RowInfo rowInfo = entry.getKey();
+            long callCount = entry.getValue();
+            RowKey rowKey = rowInfo.getRowKey();
+            ColumnName columnName = rowInfo.getColumnName();
+            byte[] row = rowKeyDistributorByHashPrefix.getDistributedKey(rowKey.getRowKey());
+            // 查询
+            Scan scan = new Scan();
+            scan.addColumn(this.bulkIncrementer.getFamily(), columnName.getColumnName());
+            List<Long> counts = hbaseTemplate.find(rowInfo.getTableName(), scan, (result, rowNum) -> {
+                long value = bytesToLong(result.getValue(bulkIncrementer.getFamily(), columnName.getColumnName()));
+                return value;
+            });
+            long sum = 0;
+            for (Long count : counts) {
+                sum += count;
+            }
+            logger.info("response flushAll - && 查询, " + rowKey + ", " + columnName + ", sum=" + sum + ", callCount=" + callCount);
+            if (sum < callCount) {
+                long count = callCount - sum;
+                logger.info("response flushAll - && - 增加, " + rowKey + ", " + columnName + ", count=" + count);
+                // 增加
+                this.hbaseTemplate.incrementColumnValue(rowInfo.getTableName(), row, this.bulkIncrementer.getFamily(), columnName.getColumnName(), count);
+            }
+        }
+    }
+
+
+    public static long bytesToLong(byte[] bytes) {
+        ByteBuffer buffer = ByteBuffer.allocate(8);
+        buffer.put(bytes, 0, bytes.length);
+        buffer.flip();//need flip
+        long longNumber = buffer.getLong();
+        buffer.clear();
+        return longNumber;
     }
 
     private byte[] getDistributedKey(byte[] rowKey) {

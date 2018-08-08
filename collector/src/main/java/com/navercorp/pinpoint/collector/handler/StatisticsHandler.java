@@ -55,8 +55,8 @@ public class StatisticsHandler {
      * @param elapsed
      * @param isError
      */
-    public void updateCaller(String callerApplicationName, ServiceType callerServiceType, String callerAgentId, String calleeApplicationName, ServiceType calleeServiceType, String calleeHost, int elapsed, boolean isError) {
-        mapStatisticsCallerDao.update(callerApplicationName, callerServiceType, callerAgentId, calleeApplicationName, calleeServiceType, calleeHost, elapsed, isError);
+    public void updateCaller(String callerApplicationName, ServiceType callerServiceType, String callerAgentId, String calleeApplicationName, ServiceType calleeServiceType, String calleeHost, int elapsed, boolean isError, long total) {
+        mapStatisticsCallerDao.update(callerApplicationName, callerServiceType, callerAgentId, calleeApplicationName, calleeServiceType, calleeHost, elapsed, isError, total);
     }
 
     /**
@@ -73,11 +73,11 @@ public class StatisticsHandler {
      * @param elapsed
      * @param isError
      */
-    public void updateCallee(String calleeApplicationName, ServiceType calleeServiceType, String callerApplicationName, ServiceType callerServiceType, String callerHost, int elapsed, boolean isError) {
-        mapStatisticsCalleeDao.update(calleeApplicationName, calleeServiceType, callerApplicationName, callerServiceType, callerHost, elapsed, isError);
+    public void updateCallee(String calleeApplicationName, ServiceType calleeServiceType, String callerApplicationName, ServiceType callerServiceType, String callerHost, int elapsed, boolean isError, long total) {
+        mapStatisticsCalleeDao.update(calleeApplicationName, calleeServiceType, callerApplicationName, callerServiceType, callerHost, elapsed, isError, total);
     }
 
-    public void updateResponseTime(String applicationName, ServiceType serviceType, String agentId, int elapsed, boolean isError) {
-        mapResponseTimeDao.received(applicationName, serviceType, agentId, elapsed, isError);
+    public void updateResponseTime(String applicationName, ServiceType serviceType, String agentId, int elapsed, boolean isError, long total) {
+        mapResponseTimeDao.received(applicationName, serviceType, agentId, elapsed, isError, total);
     }
 }

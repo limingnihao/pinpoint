@@ -98,4 +98,8 @@ public class RowKeyMerge {
         }
         return tables;
     }
+
+    public byte[] getFamily() {
+        return family;
+    }
 }

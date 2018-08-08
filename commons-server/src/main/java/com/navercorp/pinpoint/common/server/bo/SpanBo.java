@@ -70,6 +70,8 @@ public class SpanBo implements Event, BasicSpan {
 
     private byte loggingTransactionInfo; //optional
 
+    // shiming.li update
+    private long total = 1;
 
 
 
@@ -339,6 +341,13 @@ public class SpanBo implements Event, BasicSpan {
         this.loggingTransactionInfo = loggingTransactionInfo;
     }
 
+    public long getTotal() {
+        return total;
+    }
+
+    public void setTotal(long total) {
+        this.total = total;
+    }
 
     @Override
     public String toString() {

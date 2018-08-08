@@ -125,6 +125,8 @@ struct TSpan {
     31: optional i8 loggingTransactionInfo;
 
     32: optional i8 version = TRACE_V2;
+
+    33: i64 total
 }
 
 struct TSpanChunk {

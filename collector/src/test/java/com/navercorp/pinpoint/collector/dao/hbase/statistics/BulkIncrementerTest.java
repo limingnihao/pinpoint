@@ -80,7 +80,7 @@ public class BulkIncrementerTest {
 
         // When
         for (TestData testData : testDatas) {
-            bulkIncrementer.increment(testData.getTableName(), testData.getRowKey(), testData.getColumnName());
+            bulkIncrementer.increment(testData.getTableName(), testData.getRowKey(), testData.getColumnName(), 1L);
         }
 
         // Then
@@ -117,7 +117,7 @@ public class BulkIncrementerTest {
 
         // When
         for (TestData testData : testDatas) {
-            bulkIncrementer.increment(testData.getTableName(), testData.getRowKey(), testData.getColumnName());
+            bulkIncrementer.increment(testData.getTableName(), testData.getRowKey(), testData.getColumnName(), 1l);
         }
 
         // Then
@@ -240,7 +240,7 @@ public class BulkIncrementerTest {
         @Override
         public void run() {
             for (TestData testData : testDatas) {
-                bulkIncrementer.increment(testData.getTableName(), testData.getRowKey(), testData.getColumnName());
+                bulkIncrementer.increment(testData.getTableName(), testData.getRowKey(), testData.getColumnName(), 1l);
             }
             completeLatch.countDown();
         }

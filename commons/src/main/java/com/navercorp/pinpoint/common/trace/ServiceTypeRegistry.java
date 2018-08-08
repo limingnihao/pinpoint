@@ -125,9 +125,9 @@ public class ServiceTypeRegistry {
             }
             int code = serviceType.getCode();
             final ServiceType exist = this.buildMap.put(code, serviceType);
-            if (exist != null) {
-                throw new IllegalStateException("already exist. serviceType:" + serviceType + ", exist:" + exist);
-            }
+//            if (exist != null) {
+//                throw new IllegalStateException("already exist. serviceType:" + serviceType + ", exist:" + exist);
+//            }
         }
 
 

@@ -16,33 +16,36 @@
 
 package com.navercorp.pinpoint.collector.dao.hbase;
 
-import static com.navercorp.pinpoint.common.hbase.HBaseTables.*;
-
 import com.navercorp.pinpoint.collector.dao.MapStatisticsCalleeDao;
 import com.navercorp.pinpoint.collector.dao.hbase.statistics.*;
+import com.navercorp.pinpoint.common.hbase.HbaseOperations2;
 import com.navercorp.pinpoint.common.hbase.TableNameProvider;
 import com.navercorp.pinpoint.common.server.util.AcceptedTimeService;
-import com.navercorp.pinpoint.common.hbase.HbaseOperations2;
 import com.navercorp.pinpoint.common.trace.ServiceType;
 import com.navercorp.pinpoint.common.util.ApplicationMapStatisticsUtils;
 import com.navercorp.pinpoint.common.util.TimeSlot;
-
 import com.sematext.hbase.wd.RowKeyDistributorByHashPrefix;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Increment;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Scan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.*;
+
 /**
  * Update statistics of callee node
- * 
+ *
  * @author netspider
  * @author emeroad
  * @author HyunGil Jeong
@@ -83,7 +86,7 @@ public class HbaseMapStatisticsCalleeDao implements MapStatisticsCalleeDao {
     }
 
     @Override
-    public void update(String calleeApplicationName, ServiceType calleeServiceType, String callerApplicationName, ServiceType callerServiceType, String callerHost, int elapsed, boolean isError) {
+    public void update(String calleeApplicationName, ServiceType calleeServiceType, String callerApplicationName, ServiceType callerServiceType, String callerHost, int elapsed, boolean isError, long total) {
         if (callerApplicationName == null) {
             throw new NullPointerException("callerApplicationName must not be null");
         }
@@ -109,13 +112,15 @@ public class HbaseMapStatisticsCalleeDao implements MapStatisticsCalleeDao {
 
         if (useBulk) {
             TableName mapStatisticsCallerTableName = tableNameProvider.getTableName(MAP_STATISTICS_CALLER_VER2_STR);
-            bulkIncrementer.increment(mapStatisticsCallerTableName, calleeRowKey, callerColumnName);
+            bulkIncrementer.increment(mapStatisticsCallerTableName, calleeRowKey, callerColumnName, total);
         } else {
             final byte[] rowKey = getDistributedKey(calleeRowKey.getRowKey());
 
             // column name is the name of caller app.
             byte[] columnName = callerColumnName.getColumnName();
-            increment(rowKey, columnName, 1L);
+            // increment(rowKey, columnName, 1L);
+            // shiming.li update
+            increment(rowKey, columnName, total);
         }
     }
 
@@ -130,8 +135,8 @@ public class HbaseMapStatisticsCalleeDao implements MapStatisticsCalleeDao {
         hbaseTemplate.incrementColumnValue(mapStatisticsCallerTableName, rowKey, MAP_STATISTICS_CALLER_VER2_CF_COUNTER, columnName, increment);
     }
 
-    @Override
-    public void flushAll() {
+    // @Override
+    public void flushAll2() {
         if (!useBulk) {
             throw new IllegalStateException();
         }
@@ -149,7 +154,48 @@ public class HbaseMapStatisticsCalleeDao implements MapStatisticsCalleeDao {
 
     }
 
+
+    @Override
+    public void flushAll() {
+        Map<RowInfo, Long> remove = bulkIncrementer.remove();
+        for (Map.Entry<RowInfo, Long> entry : remove.entrySet()) {
+            final RowInfo rowInfo = entry.getKey();
+            long callCount = entry.getValue();
+            RowKey rowKey = rowInfo.getRowKey();
+            ColumnName columnName = rowInfo.getColumnName();
+            byte[] row = rowKeyDistributorByHashPrefix.getDistributedKey(rowKey.getRowKey());
+            // 查询
+            Scan scan = new Scan();
+            scan.addColumn(this.bulkIncrementer.getFamily(), columnName.getColumnName());
+            List<Long> counts = hbaseTemplate.find(rowInfo.getTableName(), scan, (result, rowNum) -> {
+                long value = bytesToLong(result.getValue(bulkIncrementer.getFamily(), columnName.getColumnName()));
+//                logger.info("flushAll - 查询 - " + rowKey + ", " + columnName + ", rowNum=" + rowNum + ", value=" + value);
+                return value;
+            });
+            long sum = 0;
+            for (Long count : counts) {
+                sum += count;
+            }
+            logger.info("callee flushAll - && 查询, " + rowKey + ", " + columnName + ", sum=" + sum + ", callCount=" + callCount);
+            if (sum < callCount) {
+                long count = callCount - sum;
+                logger.info("callee flushAll - && - 增加, " + rowKey + ", " + columnName + ", count=" + count);
+                // 增加
+                this.hbaseTemplate.incrementColumnValue(rowInfo.getTableName(), row, this.bulkIncrementer.getFamily(), columnName.getColumnName(), count);
+            }
+        }
+    }
+
     private byte[] getDistributedKey(byte[] rowKey) {
         return rowKeyDistributorByHashPrefix.getDistributedKey(rowKey);
+    }
+
+    public static long bytesToLong(byte[] bytes) {
+        ByteBuffer buffer = ByteBuffer.allocate(8);
+        buffer.put(bytes, 0, bytes.length);
+        buffer.flip();//need flip
+        long longNumber = buffer.getLong();
+        buffer.clear();
+        return longNumber;
     }
 }

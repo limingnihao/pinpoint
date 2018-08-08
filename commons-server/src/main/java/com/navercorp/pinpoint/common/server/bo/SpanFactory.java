@@ -86,7 +86,7 @@ public class SpanFactory {
         spanBo.setApiId(tSpan.getApiId());
 
         spanBo.setErrCode(tSpan.getErr());
-
+        spanBo.setTotal(tSpan.getTotal());
         spanBo.setAcceptorHost(tSpan.getAcceptorHost());
         spanBo.setRemoteAddr(tSpan.getRemoteAddr());
 

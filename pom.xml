@@ -86,6 +86,10 @@
     </modules>
 
     <properties>
+        <env.JAVA_6_HOME>/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home</env.JAVA_6_HOME>
+        <env.JAVA_7_HOME>/Library/Java/JavaVirtualMachines/jdk1.7.0_80.jdk/Contents/Home</env.JAVA_7_HOME>
+        <env.JAVA_8_HOME>/Library/Java/JavaVirtualMachines/jdk1.8.0_144.jdk/Contents/Home</env.JAVA_8_HOME>
+        <env.JAVA_9_HOME>/Library/Java/JavaVirtualMachines/jdk-9.jdk/Contents/Home</env.JAVA_9_HOME>
         <encoding>UTF-8</encoding>
         <jdk.version>1.6</jdk.version>
         <jdk.home>${env.JAVA_6_HOME}</jdk.home>

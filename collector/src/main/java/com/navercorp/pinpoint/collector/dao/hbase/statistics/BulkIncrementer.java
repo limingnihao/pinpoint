@@ -39,13 +39,25 @@ public class BulkIncrementer {
         this.rowKeyMerge = Objects.requireNonNull(rowKeyMerge, "rowKeyMerge must not be null");
     }
 
-    public void increment(TableName tableName, RowKey rowKey, ColumnName columnName) {
+    public void increment(TableName tableName, RowKey rowKey, ColumnName columnName, long total) {
         RowInfo rowInfo = new DefaultRowInfo(tableName, rowKey, columnName);
-        counter.incrementAndGet(rowInfo);
+        // shiming.li update
+//        counter.incrementAndGet(rowInfo);
+        counter.getAndAdd(rowInfo, total);
     }
 
     public Map<TableName, List<Increment>> getIncrements(RowKeyDistributorByHashPrefix rowKeyDistributor) {
         final Map<RowInfo, Long> snapshot = AtomicLongMapUtils.remove(counter);
         return rowKeyMerge.createBulkIncrement(snapshot, rowKeyDistributor);
     }
+
+    public Map<RowInfo, Long> remove() {
+        return AtomicLongMapUtils.remove(counter);
+    }
+
+    public byte[] getFamily() {
+        return rowKeyMerge.getFamily();
+    }
+
+
 }

@@ -134,8 +134,11 @@ public class HbaseAgentInfoDao implements AgentInfoDao {
 
         byte[] agentIdBytes = Bytes.toBytes(agentId);
         long startTime = TimeUtils.reverseTimeMillis(currentTime);
-        byte[] startKeyBytes = RowKeyUtils.concatFixedByteAndLong(agentIdBytes, HBaseTables.AGENT_NAME_MAX_LEN, startTime);
-        byte[] endKeyBytes = RowKeyUtils.concatFixedByteAndLong(agentIdBytes, HBaseTables.AGENT_NAME_MAX_LEN, Long.MAX_VALUE);
+//        byte[] startKeyBytes = RowKeyUtils.concatFixedByteAndLong(agentIdBytes, HBaseTables.AGENT_NAME_MAX_LEN, startTime);
+//        byte[] endKeyBytes = RowKeyUtils.concatFixedByteAndLong(agentIdBytes, HBaseTables.AGENT_NAME_MAX_LEN, Long.MAX_VALUE);
+
+        byte[] startKeyBytes = RowKeyUtils.concatFixedByteAndLong(agentIdBytes, 40, startTime);
+        byte[] endKeyBytes = RowKeyUtils.concatFixedByteAndLong(agentIdBytes, 40, Long.MAX_VALUE);
 
         scan.setStartRow(startKeyBytes);
         scan.setStopRow(endKeyBytes);

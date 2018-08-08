@@ -4,6 +4,7 @@
 /.vscode/
 /deploy
 /target
+**/target
 /build/
 **/node
 **/node_modules

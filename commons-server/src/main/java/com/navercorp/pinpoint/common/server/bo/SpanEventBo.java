@@ -55,7 +55,10 @@ public class SpanEventBo implements Event {
     private int asyncId = -1;
     private int nextAsyncId = -1;
     private short asyncSequence = -1;
-    
+
+    // shiming.li
+    private long total = 1;
+
     public SpanEventBo() {
     }
 
@@ -216,6 +219,14 @@ public class SpanEventBo implements Event {
         this.asyncSequence = asyncSequence;
     }
 
+
+    public long getTotal() {
+        return total;
+    }
+
+    public void setTotal(long total) {
+        this.total = total;
+    }
 
     @Override
     public String toString() {

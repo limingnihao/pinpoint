@@ -84,10 +84,10 @@ public class SpanChunkHandler implements SimpleHandler {
                      * save information to draw a server map based on statistics
                      */
                     // save the information of caller (the spanevent that span called)
-                    statisticsHandler.updateCaller(spanChunkBo.getApplicationId(), applicationServiceType, spanChunkBo.getAgentId(), spanEvent.getDestinationId(), spanEventType, spanEvent.getEndPoint(), elapsed, hasException);
+                    statisticsHandler.updateCaller(spanChunkBo.getApplicationId(), applicationServiceType, spanChunkBo.getAgentId(), spanEvent.getDestinationId(), spanEventType, spanEvent.getEndPoint(), elapsed, hasException, spanEvent.getTotal());
 
                     // save the information of callee (the span that called spanevent)
-                    statisticsHandler.updateCallee(spanEvent.getDestinationId(), spanEventType, spanChunkBo.getApplicationId(), applicationServiceType, spanChunkBo.getEndPoint(), elapsed, hasException);
+                    statisticsHandler.updateCallee(spanEvent.getDestinationId(), spanEventType, spanChunkBo.getApplicationId(), applicationServiceType, spanChunkBo.getEndPoint(), elapsed, hasException, spanEvent.getTotal());
                 }
             }
         } catch (Exception e) {
