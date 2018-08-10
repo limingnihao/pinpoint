@@ -126,8 +126,9 @@ public class SpanController {
         List<SpanVO> dbList = JSONObject.parseArray(dbesJson, SpanVO.class);
         List<SpanVO> clientList = JSONObject.parseArray(rpcClientesJson, SpanVO.class);
 
-        System.out.println(agentJson);
-        this.spanService.insertAgent(agentVO);
+        if (agentVO != null || agentVO.getAppName() != null) {
+            this.spanService.insertAgent(agentVO);
+        }
         if (httpList != null) {
             for (SpanVO vo : httpList) {
                 this.spanService.insertHttp(vo);

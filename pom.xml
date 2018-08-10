@@ -359,10 +359,15 @@
                 <version>${fastxml.jackson.version}</version>
             </dependency>
 
+            <!--<dependency>-->
+                <!--<groupId>org.apache.hbase</groupId>-->
+                <!--<artifactId>hbase-shaded-client</artifactId>-->
+                <!--<version>1.2.6.1</version>-->
+            <!--</dependency>-->
             <dependency>
                 <groupId>org.apache.hbase</groupId>
                 <artifactId>hbase-shaded-client</artifactId>
-                <version>1.2.4</version>
+                <version>1.4.6</version>
             </dependency>
 
             <dependency>
