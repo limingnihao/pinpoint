@@ -62,7 +62,7 @@ public class HbaseApplicationTraceIndexDao implements ApplicationTraceIndexDao {
             throw new NullPointerException("span must not be null");
         }
 
-        final Buffer buffer = new AutomaticBuffer(10 + AGENT_NAME_MAX_LEN);
+        final Buffer buffer = new AutomaticBuffer(10 + MAX_LEN);
         buffer.putVInt(span.getElapsed());
         buffer.putSVInt(span.getErr());
         buffer.putPrefixedString(span.getAgentId());

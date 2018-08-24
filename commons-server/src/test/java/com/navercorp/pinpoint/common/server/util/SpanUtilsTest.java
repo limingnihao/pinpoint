@@ -51,7 +51,7 @@ public class SpanUtilsTest {
     @Test
     public void testGetTraceIndexRowKey2() throws Exception {
         String agentId = "";
-        for (int i = 0; i < PinpointConstants.AGENT_NAME_MAX_LEN; i++) {
+        for (int i = 0; i < PinpointConstants.MAX_LEN; i++) {
             agentId += "1";
         }
 
@@ -62,7 +62,7 @@ public class SpanUtilsTest {
     @Test
     public void testGetTraceIndexRowKey3() throws Exception {
         String agentId = "";
-        for (int i = 0; i < PinpointConstants.AGENT_NAME_MAX_LEN + 1; i++) {
+        for (int i = 0; i < PinpointConstants.MAX_LEN + 1; i++) {
             agentId += "1";
         }
 
@@ -81,10 +81,10 @@ public class SpanUtilsTest {
 
         byte[] traceIndexRowKey = SpanUtils.getAgentIdTraceIndexRowKey(span.getAgentId(), span.getStartTime());
 
-        String agentId = BytesUtils.toString(traceIndexRowKey, 0, PinpointConstants.AGENT_NAME_MAX_LEN).trim();
+        String agentId = BytesUtils.toString(traceIndexRowKey, 0, PinpointConstants.MAX_LEN).trim();
         Assert.assertEquals(agentId0, agentId);
 
-        long time = Longs.fromByteArray(Arrays.copyOfRange(traceIndexRowKey, PinpointConstants.AGENT_NAME_MAX_LEN, PinpointConstants.AGENT_NAME_MAX_LEN + 8));
+        long time = Longs.fromByteArray(Arrays.copyOfRange(traceIndexRowKey, PinpointConstants.MAX_LEN, PinpointConstants.MAX_LEN + 8));
         time = TimeUtils.recoveryTimeMillis(time);
         Assert.assertEquals(time, l1);
     }

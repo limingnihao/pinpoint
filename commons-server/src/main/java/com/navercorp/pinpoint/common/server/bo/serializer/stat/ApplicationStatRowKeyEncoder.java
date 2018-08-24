@@ -20,7 +20,7 @@ import com.navercorp.pinpoint.common.util.BytesUtils;
 import com.navercorp.pinpoint.common.util.TimeUtils;
 import org.springframework.stereotype.Component;
 
-import static com.navercorp.pinpoint.common.hbase.HBaseTables.APPLICATION_NAME_MAX_LEN;
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.MAX_LEN;
 
 /**
  * @author minwoo.jung
@@ -35,11 +35,11 @@ public class ApplicationStatRowKeyEncoder implements RowKeyEncoder<ApplicationSt
         }
         byte[] bApplicationId = BytesUtils.toBytes(component.getApplicationId());
         byte[] bStatType = new byte[]{component.getStatType().getRawTypeCode()};
-        byte[] rowKey = new byte[APPLICATION_NAME_MAX_LEN + bStatType.length + BytesUtils.LONG_BYTE_LENGTH];
+        byte[] rowKey = new byte[MAX_LEN + bStatType.length + BytesUtils.LONG_BYTE_LENGTH];
 
         BytesUtils.writeBytes(rowKey, 0, bApplicationId);
-        BytesUtils.writeBytes(rowKey, APPLICATION_NAME_MAX_LEN, bStatType);
-        BytesUtils.writeLong(TimeUtils.reverseTimeMillis(component.getBaseTimestamp()), rowKey, APPLICATION_NAME_MAX_LEN + bStatType.length);
+        BytesUtils.writeBytes(rowKey, MAX_LEN, bStatType);
+        BytesUtils.writeLong(TimeUtils.reverseTimeMillis(component.getBaseTimestamp()), rowKey, MAX_LEN + bStatType.length);
 
         return rowKey;
     }

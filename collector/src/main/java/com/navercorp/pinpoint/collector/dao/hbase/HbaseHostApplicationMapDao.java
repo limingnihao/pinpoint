@@ -130,13 +130,13 @@ public class HbaseHostApplicationMapDao implements HostApplicationMapDao {
 
         // even if  a agentId be added for additional specifications, it may be safe to scan rows.
         // But is it needed to add parentAgentServiceType?
-        final int SIZE = HBaseTables.APPLICATION_NAME_MAX_LEN + 2 + 8;
+        final int SIZE = HBaseTables.MAX_LEN + 2 + 8;
         final Buffer rowKeyBuffer = new AutomaticBuffer(SIZE);
-        rowKeyBuffer.putPadString(parentApplicationName, HBaseTables.APPLICATION_NAME_MAX_LEN);
+        rowKeyBuffer.putPadString(parentApplicationName, HBaseTables.MAX_LEN);
         rowKeyBuffer.putShort(parentServiceType);
         rowKeyBuffer.putLong(TimeUtils.reverseTimeMillis(statisticsRowSlot));
         // there is no parentAgentId for now.  if it added later, need to comment out below code for compatibility.
-//        rowKeyBuffer.putPadString(parentAgentId, HBaseTables.AGENT_NAME_MAX_LEN);
+//        rowKeyBuffer.putPadString(parentAgentId, HBaseTables.MAX_LEN);
         return rowKeyBuffer.getBuffer();
     }
 

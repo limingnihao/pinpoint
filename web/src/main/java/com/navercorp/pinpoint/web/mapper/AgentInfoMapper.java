@@ -40,8 +40,8 @@ public class AgentInfoMapper implements RowMapper<AgentInfo> {
     public AgentInfo mapRow(Result result, int rowNum) throws Exception {
 
         byte[] rowKey = result.getRow();
-        String agentId = BytesUtils.safeTrim(BytesUtils.toString(rowKey, 0, PinpointConstants.AGENT_NAME_MAX_LEN));
-        long reverseStartTime = BytesUtils.bytesToLong(rowKey, HBaseTables.AGENT_NAME_MAX_LEN);
+        String agentId = BytesUtils.safeTrim(BytesUtils.toString(rowKey, 0, PinpointConstants.MAX_LEN));
+        long reverseStartTime = BytesUtils.bytesToLong(rowKey, HBaseTables.MAX_LEN);
         long startTime = TimeUtils.recoveryTimeMillis(reverseStartTime);
 
         byte[] serializedAgentInfo = result.getValue(HBaseTables.AGENTINFO_CF_INFO, HBaseTables.AGENTINFO_CF_INFO_IDENTIFIER);

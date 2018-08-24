@@ -44,7 +44,7 @@ public class HbaseHostApplicationMapDaoTest {
         logger.debug("rowKey size:{}", parentApps.length);
 
         Buffer readBuffer = new FixedBuffer(parentApps);
-        String appName = readBuffer.readPadStringAndRightTrim(HBaseTables.APPLICATION_NAME_MAX_LEN);
+        String appName = readBuffer.readPadStringAndRightTrim(HBaseTables.MAX_LEN);
         short code = readBuffer.readShort();
         long time = TimeUtils.recoveryTimeMillis(readBuffer.readLong());
 

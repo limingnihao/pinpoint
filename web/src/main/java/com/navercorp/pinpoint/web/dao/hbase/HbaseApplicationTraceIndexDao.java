@@ -198,7 +198,7 @@ public class HbaseApplicationTraceIndexDao implements ApplicationTraceIndexDao {
             Cell last = rawCells[rawCells.length - 1];
             byte[] row = CellUtil.cloneRow(last);
             byte[] originalRow = traceIdRowKeyDistributor.getOriginalKey(row);
-            long reverseStartTime = BytesUtils.bytesToLong(originalRow, PinpointConstants.APPLICATION_NAME_MAX_LEN);
+            long reverseStartTime = BytesUtils.bytesToLong(originalRow, PinpointConstants.MAX_LEN);
             this.lastRowTimestamp = TimeUtils.recoveryTimeMillis(reverseStartTime);
             
             byte[] qualifier = CellUtil.cloneQualifier(last);

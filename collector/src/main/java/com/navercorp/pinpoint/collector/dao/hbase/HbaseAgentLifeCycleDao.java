@@ -75,9 +75,9 @@ public class HbaseAgentLifeCycleDao implements AgentLifeCycleDao {
         long reverseStartTimestamp = TimeUtils.reverseTimeMillis(startTimestamp);
         long reverseEventCounter = TimeUtils.reverseTimeMillis(eventIdentifier);
 
-        byte[] rowKey = new byte[HBaseTables.AGENT_NAME_MAX_LEN + BytesUtils.LONG_BYTE_LENGTH + BytesUtils.LONG_BYTE_LENGTH];
+        byte[] rowKey = new byte[HBaseTables.MAX_LEN + BytesUtils.LONG_BYTE_LENGTH + BytesUtils.LONG_BYTE_LENGTH];
         BytesUtils.writeBytes(rowKey, 0, agentIdKey);
-        int offset = HBaseTables.AGENT_NAME_MAX_LEN;
+        int offset = HBaseTables.MAX_LEN;
         BytesUtils.writeLong(reverseStartTimestamp, rowKey, offset);
         offset += BytesUtils.LONG_BYTE_LENGTH;
         BytesUtils.writeLong(reverseEventCounter, rowKey, offset);
