@@ -22,13 +22,7 @@ import com.navercorp.pinpoint.common.util.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author netspider
@@ -57,6 +51,22 @@ public class SpanAligner {
 
     public SpanAligner(final List<SpanBo> spans, final long collectorAcceptTime) {
         // init sorted node list
+        Map<String, List<SpanEventBo>> spanMap = new HashMap<>();
+        for (SpanBo span : spans) {
+            spanMap.put(span.getSpanId() + "", span.getSpanEventBoList());
+            logger.info("SpanId=" + span.getSpanId() + ", ParentSpanId=" + span.getParentSpanId());
+            for (SpanEventBo event : span.getSpanEventBoList()) {
+                logger.info("----SpanId=" + span.getSpanId() + ", ParentSpanId=" + span.getParentSpanId() + ", apiid=" + event.getApiId() + ", nextSpanId=" + event.getNextSpanId());
+            }
+        }
+        for (SpanBo span : spans) {
+            // 找到自己的parent，并且将parent的event的next设置成自己spanId
+            List<SpanEventBo> parentEventList = spanMap.get(span.getParentSpanId() + "");
+            if (parentEventList != null && parentEventList.size() > 1) {
+                parentEventList.get(parentEventList.size() - 1).setNextSpanId(span.getSpanId());
+            }
+        }
+
         for (SpanBo span : spans) {
             final Node node = new Node(span, new SpanCallTree(new SpanAlign(span)));
             this.sortedNodeList.add(node);

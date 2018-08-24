@@ -24,6 +24,8 @@ import com.navercorp.pinpoint.common.server.bo.SpanEventBo;
 import com.navercorp.pinpoint.common.server.bo.SpanFactory;
 import com.navercorp.pinpoint.common.service.ServiceTypeRegistryService;
 import com.navercorp.pinpoint.common.trace.ServiceType;
+import com.navercorp.pinpoint.common.util.TransactionId;
+import com.navercorp.pinpoint.common.util.TransactionIdUtils;
 import com.navercorp.pinpoint.thrift.dto.TSpan;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.thrift.TBase;
@@ -69,13 +71,18 @@ public class SpanHandler implements SimpleHandler {
 
         try {
             final TSpan tSpan = (TSpan) tbase;
-            if (logger.isDebugEnabled()) {
-                logger.debug("Received SPAN={}", tSpan);
+            TransactionId transactionId = TransactionIdUtils.parseTransactionId(tSpan.getTransactionId());
+            logger.debug("++++++++++++++++++Received agentId={}, TransactionId={}", tSpan.getAgentId(), transactionId);
+            if (tSpan.getAgentId().equals("dubbo-client")) {
+                logger.debug("++++++++++++++++++Received Client SPAN={}", tSpan);
+            } else {
+                logger.debug("++++++++++++++++++Received Provider SPAN={}", tSpan);
             }
-
-
             final SpanBo spanBo = spanFactory.buildSpanBo(tSpan);
-
+            for (SpanEventBo event : spanBo.getSpanEventBoList()) {
+                event.setNextSpanId(-1);
+                System.out.println("===========nextSpanId=" + event.getNextSpanId());
+            }
             traceDao.insert(spanBo);
             applicationTraceIndexDao.insert(tSpan);
 
@@ -101,15 +108,14 @@ public class SpanHandler implements SimpleHandler {
                 statisticsHandler.updateCaller(span.getAcceptorHost(), spanServiceType, span.getRemoteAddr(), span.getApplicationId(), applicationServiceType, span.getEndPoint(), span.getElapsed(), isError, span.getTotal());
 
                 statisticsHandler.updateCallee(span.getApplicationId(), applicationServiceType, span.getAcceptorHost(), spanServiceType, span.getAgentId(), span.getElapsed(), isError, span.getTotal());
-            } else {
-                // shiming.li update 注释掉user的调用累计
-
+            }
+            //user
+            else {
                 // create virtual user
-
-                //statisticsHandler.updateCaller(span.getApplicationId(), ServiceType.USER, span.getAgentId(), span.getApplicationId(), applicationServiceType, span.getAgentId(), span.getElapsed(), isError);
+                statisticsHandler.updateCaller(span.getApplicationId(), ServiceType.USER, span.getAgentId(), span.getApplicationId(), applicationServiceType, span.getAgentId(), span.getElapsed(), isError, span.getTotal());
 
                 // update the span information of the current node (self)
-                //statisticsHandler.updateCallee(span.getApplicationId(), applicationServiceType, span.getApplicationId(), ServiceType.USER, span.getAgentId(), span.getElapsed(), isError);
+                statisticsHandler.updateCallee(span.getApplicationId(), applicationServiceType, span.getApplicationId(), ServiceType.USER, span.getAgentId(), span.getElapsed(), isError, span.getTotal());
             }
             bugCheck++;
         }

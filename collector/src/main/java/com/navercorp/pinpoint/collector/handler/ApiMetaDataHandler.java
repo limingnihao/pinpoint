@@ -50,6 +50,7 @@ public class ApiMetaDataHandler implements RequestResponseHandler {
         if (logger.isInfoEnabled()) {
             logger.info("Received ApiMetaData={}", apiMetaData);
         }
+        logger.info("Received ApiMetaData={}", apiMetaData);
 
         try {
             sqlMetaDataDao.insert(apiMetaData);

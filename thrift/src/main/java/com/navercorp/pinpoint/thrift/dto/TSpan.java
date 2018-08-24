@@ -64,7 +64,7 @@ public class TSpan implements org.apache.thrift.TBase<TSpan, TSpan._Fields>, jav
   private short applicationServiceType; // optional
   private byte loggingTransactionInfo; // optional
   private byte version; // optional
-  private long total; // required
+  private long total = -1; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {

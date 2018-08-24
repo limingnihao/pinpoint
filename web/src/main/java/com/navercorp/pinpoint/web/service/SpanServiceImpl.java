@@ -256,6 +256,7 @@ public class SpanServiceImpl implements SpanService {
 
                 // may be able to get a more accurate data using agentIdentifier.
                 List<ApiMetaDataBo> apiMetaDataList = apiMetaDataDao.getApiMetaData(spanAlign.getAgentId(), spanAlign.getAgentStartTime(), apiId);
+                logger.debug("***** agentId=" + spanAlign.getAgentId() + ", AgentStartTime=" + spanAlign.getAgentStartTime() + ", apiId=" + apiId + ", sise=" + apiMetaDataList.size());
                 int size = apiMetaDataList.size();
                 if (size == 0) {
                     AnnotationBo api = new AnnotationBo();

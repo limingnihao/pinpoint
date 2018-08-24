@@ -34,6 +34,7 @@ public class ThreadLocalAcceptedTimeService implements AcceptedTimeService {
 
     @Override
     public void accept(long time) {
+        System.out.println("ThreadLocalAcceptedTimeService - " + time);
         local.set(time);
     }
 

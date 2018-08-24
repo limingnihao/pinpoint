@@ -56,7 +56,7 @@ public class HbaseTraceDaoV2 implements TraceDao {
 
 
         long acceptedTime = spanBo.getCollectorAcceptTime();
-
+        System.out.println("HbaseTraceDaoV2 - acceptedTime=" + acceptedTime);
         TransactionId transactionId = spanBo.getTransactionId();
         final byte[] rowKey = this.rowKeyEncoder.encodeRowKey(transactionId);
         final Put put = new Put(rowKey, acceptedTime);

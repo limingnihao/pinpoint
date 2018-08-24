@@ -69,6 +69,7 @@ public class HbaseApplicationTraceIndexDao implements ApplicationTraceIndexDao {
         final byte[] value = buffer.getBuffer();
 
         long acceptedTime = acceptedTimeService.getAcceptedTime();
+        System.out.println("HbaseApplicationTraceIndexDao - acceptedTime" + acceptedTime);
         final byte[] distributedKey = createRowKey(span, acceptedTime);
         Put put = new Put(distributedKey);
 

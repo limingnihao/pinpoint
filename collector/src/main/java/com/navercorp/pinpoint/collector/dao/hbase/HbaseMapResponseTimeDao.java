@@ -27,7 +27,6 @@ import com.navercorp.pinpoint.common.util.TimeSlot;
 import com.sematext.hbase.wd.RowKeyDistributorByHashPrefix;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Increment;
-import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Scan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +35,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -160,23 +158,30 @@ public class HbaseMapResponseTimeDao implements MapResponseTimeDao {
             RowKey rowKey = rowInfo.getRowKey();
             ColumnName columnName = rowInfo.getColumnName();
             byte[] row = rowKeyDistributorByHashPrefix.getDistributedKey(rowKey.getRowKey());
-            // 查询
-            Scan scan = new Scan();
-            scan.addColumn(this.bulkIncrementer.getFamily(), columnName.getColumnName());
-            List<Long> counts = hbaseTemplate.find(rowInfo.getTableName(), scan, (result, rowNum) -> {
-                long value = bytesToLong(result.getValue(bulkIncrementer.getFamily(), columnName.getColumnName()));
-                return value;
-            });
-            long sum = 0;
-            for (Long count : counts) {
-                sum += count;
+            if (callCount > 0) {
+                // 查询
+                Scan scan = new Scan();
+                scan.addColumn(this.bulkIncrementer.getFamily(), columnName.getColumnName());
+                List<Long> counts = hbaseTemplate.find(rowInfo.getTableName(), scan, (result, rowNum) -> {
+                    long value = bytesToLong(result.getValue(bulkIncrementer.getFamily(), columnName.getColumnName()));
+                    return value;
+                });
+                long sum = 0;
+                for (Long count : counts) {
+                    sum += count;
+                }
+                logger.info("response flushAll - && 查询, " + rowKey + ", " + columnName + ", sum=" + sum + ", callCount=" + callCount);
+                if (sum < callCount) {
+                    long count = callCount - sum;
+                    logger.info("response flushAll - && - 增加, " + rowKey + ", " + columnName + ", count=" + count);
+                    // 增加
+                    this.hbaseTemplate.incrementColumnValue(rowInfo.getTableName(), row, this.bulkIncrementer.getFamily(), columnName.getColumnName(), count);
+                }
             }
-            logger.info("response flushAll - && 查询, " + rowKey + ", " + columnName + ", sum=" + sum + ", callCount=" + callCount);
-            if (sum < callCount) {
-                long count = callCount - sum;
-                logger.info("response flushAll - && - 增加, " + rowKey + ", " + columnName + ", count=" + count);
-                // 增加
-                this.hbaseTemplate.incrementColumnValue(rowInfo.getTableName(), row, this.bulkIncrementer.getFamily(), columnName.getColumnName(), count);
+            // -1的时候为默认的调用
+            else if (callCount == -1) {
+                logger.info("response flushAll - && - 递增, " + rowKey + ", " + columnName);
+                this.hbaseTemplate.incrementColumnValue(rowInfo.getTableName(), row, this.bulkIncrementer.getFamily(), columnName.getColumnName(), 1);
             }
         }
     }
