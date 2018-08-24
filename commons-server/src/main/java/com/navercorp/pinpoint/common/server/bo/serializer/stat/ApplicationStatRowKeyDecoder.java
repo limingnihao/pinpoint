@@ -21,7 +21,7 @@ import com.navercorp.pinpoint.common.util.BytesUtils;
 import com.navercorp.pinpoint.common.util.TimeUtils;
 import org.springframework.stereotype.Component;
 
-import static com.navercorp.pinpoint.common.hbase.HBaseTables.APPLICATION_NAME_MAX_LEN;
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.MAX_LEN;
 import static com.navercorp.pinpoint.common.server.bo.stat.join.StatType.TYPE_CODE_BYTE_LENGTH;
 
 
@@ -33,9 +33,9 @@ public class ApplicationStatRowKeyDecoder implements RowKeyDecoder<ApplicationSt
 
     @Override
     public ApplicationStatRowKeyComponent decodeRowKey(byte[] rowkey) {
-        final String applicationId = BytesUtils.safeTrim(BytesUtils.toString(rowkey, 0, APPLICATION_NAME_MAX_LEN));
-        final StatType statType = StatType.fromTypeCode(rowkey[APPLICATION_NAME_MAX_LEN]);
-        final long reversedBaseTimestamp = BytesUtils.bytesToLong(rowkey, APPLICATION_NAME_MAX_LEN + TYPE_CODE_BYTE_LENGTH);
+        final String applicationId = BytesUtils.safeTrim(BytesUtils.toString(rowkey, 0, MAX_LEN));
+        final StatType statType = StatType.fromTypeCode(rowkey[MAX_LEN]);
+        final long reversedBaseTimestamp = BytesUtils.bytesToLong(rowkey, MAX_LEN + TYPE_CODE_BYTE_LENGTH);
         final long baseTimestamp = TimeUtils.recoveryTimeMillis(reversedBaseTimestamp);
         return new ApplicationStatRowKeyComponent(applicationId, statType, baseTimestamp);
     }

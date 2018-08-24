@@ -50,12 +50,12 @@ public class HostApplicationMapper implements RowMapper<Application> {
         }
         byte[] value = result.value();
 
-        if (value.length != HBaseTables.APPLICATION_NAME_MAX_LEN + 2) {
+        if (value.length != HBaseTables.MAX_LEN + 2) {
             logger.warn("Invalid value. {}", Arrays.toString(value));
         }
 
-        String applicationName = Bytes.toString(value, 0, HBaseTables.APPLICATION_NAME_MAX_LEN - 1).trim();
-        short serviceTypeCode = Bytes.toShort(value, HBaseTables.APPLICATION_NAME_MAX_LEN);
+        String applicationName = Bytes.toString(value, 0, HBaseTables.MAX_LEN - 1).trim();
+        short serviceTypeCode = Bytes.toShort(value, HBaseTables.MAX_LEN);
         return this.applicationFactory.createApplication(applicationName, serviceTypeCode);
     }
 }

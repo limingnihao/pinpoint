@@ -44,7 +44,7 @@ public class ApplicationMapStatisticsUtils {
             destHost = "";
         }
         // approximate size of destHost
-        final Buffer buffer = new AutomaticBuffer(BytesUtils.SHORT_BYTE_LENGTH + PinpointConstants.APPLICATION_NAME_MAX_LEN + destHost.length() + BytesUtils.SHORT_BYTE_LENGTH);
+        final Buffer buffer = new AutomaticBuffer(BytesUtils.SHORT_BYTE_LENGTH + PinpointConstants.MAX_LEN + destHost.length() + BytesUtils.SHORT_BYTE_LENGTH);
         buffer.putShort(serviceType);
         buffer.putShort(slotNumber);
         buffer.put2PrefixedString(applicationName);

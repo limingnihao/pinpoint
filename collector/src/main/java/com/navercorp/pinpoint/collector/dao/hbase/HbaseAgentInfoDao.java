@@ -78,7 +78,7 @@ public class HbaseAgentInfoDao implements AgentInfoDao {
 
         byte[] agentId = Bytes.toBytes(agentInfo.getAgentId());
         long reverseKey = TimeUtils.reverseTimeMillis(agentInfo.getStartTimestamp());
-        byte[] rowKey = RowKeyUtils.concatFixedByteAndLong(agentId, HBaseTables.AGENT_NAME_MAX_LEN, reverseKey);
+        byte[] rowKey = RowKeyUtils.concatFixedByteAndLong(agentId, HBaseTables.MAX_LEN, reverseKey);
         Put put = new Put(rowKey);
 
         // should add additional agent informations. for now added only starttime for sqlMetaData
