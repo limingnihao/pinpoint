@@ -203,6 +203,8 @@ public class SpanVO {
                 "traceId='" + traceId + '\'' +
                 ", spanId='" + spanId + '\'' +
                 ", parentSpanId='" + parentSpanId + '\'' +
+                ", nextSpanId='" + nextSpanId + '\'' +
+                ", traceTime=" + traceTime +
                 ", ipAddress='" + ipAddress + '\'' +
                 ", appName='" + appName + '\'' +
                 ", status='" + status + '\'' +

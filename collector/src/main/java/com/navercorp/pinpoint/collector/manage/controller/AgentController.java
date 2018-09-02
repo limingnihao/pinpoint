@@ -21,7 +21,14 @@ public class AgentController {
     private SpanService spanService;
 
     @RequestMapping(value = "/create", method = RequestMethod.POST)
-    public String create(@RequestBody String json) {
+    public String create(AgentVO vo) {
+        logger.info(vo.toString());
+        this.spanService.insertAgent(vo);
+        return "ok";
+    }
+
+    @RequestMapping(value = "/createJson", method = RequestMethod.POST)
+    public String createJson(@RequestBody String json) {
         logger.info(json);
         AgentVO vo = JSONObject.parseObject(json, AgentVO.class);
         if (vo != null) {

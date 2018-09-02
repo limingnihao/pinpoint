@@ -71,18 +71,8 @@ public class SpanHandler implements SimpleHandler {
 
         try {
             final TSpan tSpan = (TSpan) tbase;
-            TransactionId transactionId = TransactionIdUtils.parseTransactionId(tSpan.getTransactionId());
-            logger.debug("++++++++++++++++++Received agentId={}, TransactionId={}", tSpan.getAgentId(), transactionId);
-            if (tSpan.getAgentId().equals("dubbo-client")) {
-                logger.debug("++++++++++++++++++Received Client SPAN={}", tSpan);
-            } else {
-                logger.debug("++++++++++++++++++Received Provider SPAN={}", tSpan);
-            }
+            logger.debug("++++++++++++++++++Received {}", tSpan);
             final SpanBo spanBo = spanFactory.buildSpanBo(tSpan);
-            for (SpanEventBo event : spanBo.getSpanEventBoList()) {
-                event.setNextSpanId(-1);
-                System.out.println("===========nextSpanId=" + event.getNextSpanId());
-            }
             traceDao.insert(spanBo);
             applicationTraceIndexDao.insert(tSpan);
 

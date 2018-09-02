@@ -58,7 +58,7 @@ public class HbaseApiMetaDataDao implements ApiMetaDataDao {
         if (logger.isDebugEnabled()) {
             logger.debug("insert:{}", apiMetaData);
         }
-
+        logger.debug("insert:{}", apiMetaData);
 
         ApiMetaDataBo apiMetaDataBo = new ApiMetaDataBo(apiMetaData.getAgentId(), apiMetaData.getAgentStartTime(), apiMetaData.getApiId());
         byte[] rowKey = getDistributedKey(apiMetaDataBo.toRowKey());

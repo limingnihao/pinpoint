@@ -35,15 +35,25 @@ public class SpanController {
         return "ok";
     }
 
+    @RequestMapping("insertUserJson")
+    public String insertUserJson(@RequestBody String json) {
+        SpanVO vo = JSONObject.parseObject(json, SpanVO.class);
+        if (vo != null) {
+            this.spanService.insertUser(vo);
+        }
+        return "ok";
+    }
+
     @RequestMapping("insertHttp")
     public String insertHttp(SpanVO vo) {
         this.spanService.insertHttp(vo);
         return "ok";
     }
 
-    @RequestMapping("insertHttpes")
-    public String insertHttp(@RequestBody SpanVO[] list) {
-        for (SpanVO vo : list) {
+    @RequestMapping("insertHttpJson")
+    public String insertHttpJson(@RequestBody String json) {
+        SpanVO vo = JSONObject.parseObject(json, SpanVO.class);
+        if (vo != null) {
             this.spanService.insertHttp(vo);
         }
         return "ok";
@@ -55,9 +65,10 @@ public class SpanController {
         return "ok";
     }
 
-    @RequestMapping("insertDBes")
-    public String insertDbs(@RequestBody SpanVO[] list) {
-        for (SpanVO vo : list) {
+    @RequestMapping("insertDBJson")
+    public String insertDBJson(@RequestBody String json) {
+        SpanVO vo = JSONObject.parseObject(json, SpanVO.class);
+        if (vo != null) {
             this.spanService.insertDb(vo);
         }
         return "ok";
@@ -69,9 +80,10 @@ public class SpanController {
         return "ok";
     }
 
-    @RequestMapping("insertRedises")
-    public String insertRedises(@RequestBody SpanVO[] list) {
-        for (SpanVO vo : list) {
+    @RequestMapping("insertRedisJson")
+    public String insertRedisJson(@RequestBody String json) {
+        SpanVO vo = JSONObject.parseObject(json, SpanVO.class);
+        if (vo != null) {
             this.spanService.insertRedis(vo);
         }
         return "ok";
@@ -83,9 +95,10 @@ public class SpanController {
         return "ok";
     }
 
-    @RequestMapping("insertRpcProvideres")
-    public String insertRpcProvideres(@RequestBody SpanVO[] list) {
-        for (SpanVO vo : list) {
+    @RequestMapping("insertRpcProviderJson")
+    public String insertRpcProviderJson(@RequestBody String json) {
+        SpanVO vo = JSONObject.parseObject(json, SpanVO.class);
+        if (vo != null) {
             this.spanService.insertRpcProvider(vo);
         }
         return "ok";
@@ -97,14 +110,14 @@ public class SpanController {
         return "ok";
     }
 
-    @RequestMapping("insertRpcClientes")
-    public String insertRpcClientes(@RequestBody SpanVO[] list) {
-        for (SpanVO vo : list) {
+    @RequestMapping("insertRpcClientJson")
+    public String insertRpcClientJson(@RequestBody String json) {
+        SpanVO vo = JSONObject.parseObject(json, SpanVO.class);
+        if (vo != null) {
             this.spanService.insertRpcClient(vo);
         }
         return "ok";
     }
-
 
     @RequestMapping("insertAll")
     public String all(String agentJson, String httpesJson, String redisesJson, String dbesJson, String rpcClientesJson) {

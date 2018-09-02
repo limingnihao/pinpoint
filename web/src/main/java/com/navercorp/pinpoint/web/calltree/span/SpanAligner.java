@@ -19,8 +19,12 @@ package com.navercorp.pinpoint.web.calltree.span;
 import com.navercorp.pinpoint.common.server.bo.SpanBo;
 import com.navercorp.pinpoint.common.server.bo.SpanEventBo;
 import com.navercorp.pinpoint.common.util.CollectionUtils;
+import com.navercorp.pinpoint.thrift.dto.TApiMetaData;
+import com.navercorp.pinpoint.web.dao.ApiMetaDataDao;
+import com.navercorp.pinpoint.web.dao.hbase.HbaseApiMetaDataDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
 
@@ -49,21 +53,43 @@ public class SpanAligner {
     private final List<Link> linkList = new ArrayList<>();
     private final MetaSpanCallTreeFactory metaSpanCallTreeFactory = new MetaSpanCallTreeFactory();
 
-    public SpanAligner(final List<SpanBo> spans, final long collectorAcceptTime) {
+    private ApiMetaDataDao apiMetaDataDao;
+
+    public SpanAligner(final List<SpanBo> spans, final long collectorAcceptTime, ApiMetaDataDao apiMetaDataDao) {
         // init sorted node list
-        Map<String, List<SpanEventBo>> spanMap = new HashMap<>();
+        Map<String, SpanBo> spanMap = new HashMap<>();
         for (SpanBo span : spans) {
-            spanMap.put(span.getSpanId() + "", span.getSpanEventBoList());
+            spanMap.put(span.getSpanId() + "", span);
             logger.info("SpanId=" + span.getSpanId() + ", ParentSpanId=" + span.getParentSpanId());
-            for (SpanEventBo event : span.getSpanEventBoList()) {
-                logger.info("----SpanId=" + span.getSpanId() + ", ParentSpanId=" + span.getParentSpanId() + ", apiid=" + event.getApiId() + ", nextSpanId=" + event.getNextSpanId());
-            }
+//            for (SpanEventBo event : span.getSpanEventBoList()) {
+//                logger.info("----SpanId=" + span.getSpanId() + ", ParentSpanId=" + span.getParentSpanId() + ", apiid=" + event.getApiId() + ", nextSpanId=" + event.getNextSpanId());
+//            }
         }
         for (SpanBo span : spans) {
             // 找到自己的parent，并且将parent的event的next设置成自己spanId
-            List<SpanEventBo> parentEventList = spanMap.get(span.getParentSpanId() + "");
-            if (parentEventList != null && parentEventList.size() > 1) {
-                parentEventList.get(parentEventList.size() - 1).setNextSpanId(span.getSpanId());
+            SpanBo parentSpan = spanMap.get(span.getParentSpanId() + "");
+            if (parentSpan != null) {
+                if (parentSpan.getSpanEventBoList() != null && parentSpan.getSpanEventBoList().size() > 0) {
+                    parentSpan.getSpanEventBoList().get(parentSpan.getSpanEventBoList().size() - 1).setNextSpanId(span.getSpanId());
+                } else {
+                    String service = "com.zhaopin.thrift.rpc.Proxy.proxy()";
+                    TApiMetaData api = new TApiMetaData();
+                    api.setAgentId(parentSpan.getAgentId());
+                    api.setAgentStartTime(parentSpan.getAgentStartTime());
+                    api.setApiId(service.hashCode());
+                    api.setApiInfo(service);
+                    apiMetaDataDao.insert(api);
+
+                    SpanEventBo event = new SpanEventBo();
+                    event.setServiceType(parentSpan.getServiceType());
+                    event.setApiId(service.hashCode());
+                    event.setDestinationId(parentSpan.getEndPoint());
+                    event.setEndPoint(parentSpan.getEndPoint());
+                    event.setSequence(Short.parseShort("0"));
+                    event.setDepth(1);
+                    event.setNextSpanId(span.getSpanId());
+                    parentSpan.getSpanEventBoList().add(event);
+                }
             }
         }
 

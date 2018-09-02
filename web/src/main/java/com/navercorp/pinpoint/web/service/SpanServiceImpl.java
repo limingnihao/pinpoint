@@ -41,6 +41,7 @@ import com.navercorp.pinpoint.web.dao.ApiMetaDataDao;
 import com.navercorp.pinpoint.web.dao.SqlMetaDataDao;
 import com.navercorp.pinpoint.web.dao.StringMetaDataDao;
 import com.navercorp.pinpoint.web.dao.TraceDao;
+import com.navercorp.pinpoint.web.dao.hbase.HbaseApiMetaDataDao;
 import com.navercorp.pinpoint.web.security.MetaDataFilter;
 import com.navercorp.pinpoint.web.security.MetaDataFilter.MetaData;
 
@@ -76,6 +77,7 @@ public class SpanServiceImpl implements SpanService {
 
     @Autowired
     private StringMetaDataDao stringMetaDataDao;
+
 
     private final SqlParser sqlParser = new DefaultSqlParser();
     private final OutputParameterParser outputParameterParser = new OutputParameterParser();
@@ -256,7 +258,7 @@ public class SpanServiceImpl implements SpanService {
 
                 // may be able to get a more accurate data using agentIdentifier.
                 List<ApiMetaDataBo> apiMetaDataList = apiMetaDataDao.getApiMetaData(spanAlign.getAgentId(), spanAlign.getAgentStartTime(), apiId);
-                logger.debug("***** agentId=" + spanAlign.getAgentId() + ", AgentStartTime=" + spanAlign.getAgentStartTime() + ", apiId=" + apiId + ", sise=" + apiMetaDataList.size());
+                logger.debug("***** getApiMetaData **** agentId=" + spanAlign.getAgentId() + ", AgentStartTime=" + spanAlign.getAgentStartTime() + ", apiId=" + apiId + ", sise=" + apiMetaDataList.size());
                 int size = apiMetaDataList.size();
                 if (size == 0) {
                     AnnotationBo api = new AnnotationBo();
@@ -403,7 +405,7 @@ public class SpanServiceImpl implements SpanService {
     }
 
     private SpanResult order(List<SpanBo> spans, long selectedSpanHint) {
-        SpanAligner spanAligner = new SpanAligner(spans, selectedSpanHint);
+        SpanAligner spanAligner = new SpanAligner(spans, selectedSpanHint, this.apiMetaDataDao);
         final CallTree callTree = spanAligner.align();
 
         return new SpanResult(spanAligner.getMatchType(), callTree.iterator());
