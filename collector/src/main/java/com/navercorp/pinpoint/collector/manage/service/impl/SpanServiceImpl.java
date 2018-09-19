@@ -1,6 +1,8 @@
 package com.navercorp.pinpoint.collector.manage.service.impl;
 
 import com.navercorp.pinpoint.collector.dao.AgentLifeCycleDao;
+import com.navercorp.pinpoint.collector.dao.SqlMetaDataDao;
+import com.navercorp.pinpoint.collector.dao.StringMetaDataDao;
 import com.navercorp.pinpoint.collector.dao.hbase.HbaseApiMetaDataDao;
 import com.navercorp.pinpoint.collector.handler.AgentInfoHandler;
 import com.navercorp.pinpoint.collector.handler.AgentStatHandlerV2;
@@ -11,6 +13,8 @@ import com.navercorp.pinpoint.collector.manage.vo.SpanVO;
 import com.navercorp.pinpoint.common.server.bo.AgentLifeCycleBo;
 import com.navercorp.pinpoint.common.server.util.AcceptedTimeService;
 import com.navercorp.pinpoint.common.server.util.AgentLifeCycleState;
+import com.navercorp.pinpoint.common.trace.AnnotationKey;
+import com.navercorp.pinpoint.common.trace.MethodType;
 import com.navercorp.pinpoint.common.trace.ServiceType;
 import com.navercorp.pinpoint.common.util.TransactionIdUtils;
 import com.navercorp.pinpoint.plugin.jdbc.mysql.MySqlConstants;
@@ -52,10 +56,16 @@ public class SpanServiceImpl implements SpanService {
     @Autowired
     private AcceptedTimeService acceptedTimeService;
 
+    @Autowired
+    private StringMetaDataDao stringMetaDataDao;
+
+    @Autowired
+    private SqlMetaDataDao sqlMetaDataDao;
+
     @Override
     public void insertAgent(AgentVO agentVO) {
         logger.info("create - " + agentVO);
-        String agentId = agentVO.getAppName() + "-" + agentVO.getIpAddress();
+        String agentId = getAgentId(agentVO.getAppName(), agentVO.getIpAddress());
         long start = System.currentTimeMillis();
         TAgentInfo agent = new TAgentInfo();
         agent.setApplicationName(agentVO.getAppName());
@@ -121,7 +131,8 @@ public class SpanServiceImpl implements SpanService {
     public void insertUser(SpanVO vo) {
         long agentTime = this.acceptedTimeService.getAcceptedTime();
         logger.info("insertUser - " + vo + ", agentTime=" + agentTime);
-        String agentId = vo.getAppName() + "-" + vo.getIpAddress();
+        String agentId = getAgentId(vo.getAppName(), vo.getIpAddress());
+        long now = vo.getStartTime() <= 0 ? System.currentTimeMillis() : vo.getStartTime();
 
         String service = vo.getService() + "." + vo.getMethod() + "()";
         TApiMetaData api = new TApiMetaData();
@@ -132,7 +143,7 @@ public class SpanServiceImpl implements SpanService {
         this.hbaseApiMetaDataDao.insert(api);
 
 //        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, now, 1);
-        byte[] transactionId = TransactionIdUtils.formatBytes(vo.getTraceId(), vo.getTraceTime(), vo.getTraceId().hashCode());
+        byte[] transactionId = TransactionIdUtils.formatBytes(vo.getTraceId(), 0, 0);
         long parentSpanId = -1;
         long spanId = vo.getSpanId().hashCode();
 
@@ -144,11 +155,15 @@ public class SpanServiceImpl implements SpanService {
         span.setParentSpanId(parentSpanId);
         span.setApiId(api.getApiId());
         span.setEndPoint(vo.getIpAddress());
-        span.setStartTime(vo.getTraceTime());
+
+        span.setStartTime(now);
         span.setAgentStartTime(agentTime);
+        span.setElapsed(vo.getElapsed());
+
         span.setRpc(vo.getUrl());
         span.setServiceType(ServiceType.USER.getCode());
         span.setApplicationServiceType(SpringBootConstants.SERVICE_TYPE.getCode());
+        span.setRemoteAddr("http " + vo.getIpAddress());
         this.spanHandler.handleSimple(span);
 
     }
@@ -157,34 +172,29 @@ public class SpanServiceImpl implements SpanService {
     public void insertHttp(SpanVO vo) {
         logger.info("insertHttp - " + vo);
 
-        String agentId = vo.getAppName() + "-" + vo.getIpAddress();
-        long now = System.currentTimeMillis();
-//        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, now, 1);
-        byte[] transactionId = TransactionIdUtils.formatBytes(vo.getTraceId(), vo.getTraceTime(), vo.getTraceId().hashCode());
+        long agentTime = this.acceptedTimeService.getAcceptedTime();
+        String agentId = getAgentId(vo.getAppName(), vo.getIpAddress());
+        long now = vo.getStartTime() <= 0 ? System.currentTimeMillis() : vo.getStartTime();
+
+        //        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, now, 1);
+        byte[] transactionId = TransactionIdUtils.formatBytes(vo.getTraceId(), 0, 0);
 
         long parentSpanId = vo.getParentSpanId().hashCode();
         long spanId = vo.getSpanId().hashCode();
 
-        TApiMetaData api1 = null;
+        TApiMetaData api = null;
+        String apiInfo = null;
         if (StringUtils.isNotEmpty(vo.getService()) && StringUtils.isNotEmpty(vo.getMethod())) {
-            String apiInfo = vo.getService() + "." + vo.getMethod();
-            api1 = new TApiMetaData();
-            api1.setAgentId(agentId);
-            api1.setAgentStartTime(this.acceptedTimeService.getAcceptedTime());
-            api1.setApiId(apiInfo.hashCode());
-            api1.setApiInfo(apiInfo);
-            this.hbaseApiMetaDataDao.insert(api1);
+            apiInfo = vo.getService() + "." + vo.getMethod() + "()";
+        } else {
+            apiInfo = "com.zhaopin.common3.http.HttpUtils.query()";
         }
-//        TApiMetaData api2 = null;
-//        if (StringUtils.isNotEmpty(vo.getDomain()) && StringUtils.isNotEmpty(vo.getUrl())) {
-//            String url = vo.getDomain() + "" + vo.getUrl();
-//            api2 = new TApiMetaData();
-//            api2.setAgentId(agentId);
-//            api2.setAgentStartTime(now);
-//            api2.setApiId(url.hashCode());
-//            api2.setApiInfo(url);
-//            this.hbaseApiMetaDataDao.insert(api2);
-//        }
+        api = new TApiMetaData();
+        api.setAgentId(agentId);
+        api.setAgentStartTime(agentTime);
+        api.setApiId(apiInfo.hashCode());
+        api.setApiInfo(apiInfo);
+        this.hbaseApiMetaDataDao.insert(api);
 
         TSpan span = new TSpan();
         span.setAgentId(agentId);
@@ -192,44 +202,63 @@ public class SpanServiceImpl implements SpanService {
         span.setTransactionId(transactionId);
         span.setSpanId(spanId <= 0 ? vo.hashCode() : spanId);
         span.setParentSpanId(parentSpanId);
+        span.setRpc(vo.getService() + "." + vo.getMethod());
 
         span.setStartTime(now);
-        span.setAgentStartTime(this.acceptedTimeService.getAcceptedTime());
-        span.setRpc(vo.getService() + "." + vo.getMethod());
+        span.setAgentStartTime(agentTime);
+        span.setElapsed(vo.getElapsed());
         span.setServiceType(ThriftConstants.THRIFT_SERVER.getCode());
         span.setApplicationServiceType(SpringBootConstants.SERVICE_TYPE.getCode());
+        span.setSpanEventList(new ArrayList<TSpanEvent>());
 
         span.setTotal(parseLong(vo.getTotal()));
-        span.setSpanEventList(new ArrayList<TSpanEvent>());
-        if (api1 != null) {
-            span.setApiId(api1.getApiId());
+        if (api != null) {
+            span.setApiId(api.getApiId());
         }
 
-        // java方法
-//        TSpanEvent event1 = new TSpanEvent();
-//        event1.setServiceType(ThriftConstants.THRIFT_SERVER.getCode());
-//        event1.setSequence((short) 1);
+        // api
+//        TApiMetaData api2 = new TApiMetaData();
+//        api2.setAgentId(agentId);
+//        api2.setAgentStartTime(agentTime);
+//        api2.setApiInfo("HTTP.proxy()");
+//        api2.setApiId(api2.getApiInfo().hashCode());
+//        this.hbaseApiMetaDataDao.insert(api2);
 
         // http
-        TSpanEvent event2 = new TSpanEvent();
-        event2.setServiceType(JdkHttpConstants.SERVICE_TYPE.getCode());
-        event2.setDestinationId(vo.getDomain());
-        event2.setSequence((short) 1);
+        TAnnotation tAnnotation = new TAnnotation();
+        tAnnotation.setKey(AnnotationKey.API.getCode());
+        tAnnotation.setValue(TAnnotationValue.stringValue(vo.getDomain() + "" + vo.getUrl()));
+
+        TSpanEvent event1 = new TSpanEvent();
+        event1.setServiceType(JdkHttpConstants.SERVICE_TYPE.getCode());
+        event1.setDestinationId(vo.getDomain());
+        event1.setEndPoint(vo.getDomain());
+        event1.setNextSpanId(-1);
+        event1.setSequence((short) 0);
+        event1.setDepth(1);
+        event1.setApiId(0);
+        event1.setAnnotations(new ArrayList<TAnnotation>());
+        event1.getAnnotations().add(tAnnotation);
+//
+//        TSpanEvent event2 = new TSpanEvent();
+//        event2.setServiceType(MySqlConstants.MYSQL_EXECUTE_QUERY.getCode());
+//        event2.setSequence((short) 1);
+//        event1.setDestinationId(vo.getDomain());
+//        event1.setEndPoint(vo.getDomain());
+//        event2.setNextSpanId(-1);
+//        event2.setApiId(api2.getApiId());
+//        event2.setDepth(1);
+//        event2.setAnnotations(new ArrayList<>());
+
         // 0是没错误的
         if ("2xx".equals(vo.getStatus())) {
         } else {
             TIntStringValue exception = new TIntStringValue();
             exception.setStringValue(vo.getStatus());
-            event2.setExceptionInfo(exception);
+            event1.setExceptionInfo(exception);
         }
-        TAnnotation tAnnotation = new TAnnotation();
-        tAnnotation.setKey(event2.hashCode());
-        tAnnotation.setValue(TAnnotationValue.stringValue("http://" + vo.getDomain()));
-        event2.setAnnotations(new ArrayList<TAnnotation>());
-        event2.getAnnotations().add(tAnnotation);
 
-//        span.getSpanEventList().add(event1);
-        span.getSpanEventList().add(event2);
+        span.getSpanEventList().add(event1);
 
         this.spanHandler.handleSimple(span);
     }
@@ -237,24 +266,24 @@ public class SpanServiceImpl implements SpanService {
     @Override
     public void insertDb(SpanVO vo) {
         logger.info("insertDb - " + vo);
-
-        String agentId = vo.getAppName() + "-" + vo.getIpAddress();
-        long now = System.currentTimeMillis();
+        long agentTime = this.acceptedTimeService.getAcceptedTime();
+        String agentId = getAgentId(vo.getAppName(), vo.getIpAddress());
+        long now = vo.getStartTime() <= 0 ? System.currentTimeMillis() : vo.getStartTime();
 //        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, now, 1);
-        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, vo.getTraceTime(), vo.getTraceId().hashCode());
+        byte[] transactionId = TransactionIdUtils.formatBytes(vo.getTraceId(), 0, 0);
 
         long parentSpanId = vo.getParentSpanId().hashCode();
         long spanId = vo.getSpanId().hashCode();
 
-        TApiMetaData api1 = null;
+        TApiMetaData api = null;
         if (StringUtils.isNotEmpty(vo.getService()) && StringUtils.isNotEmpty(vo.getMethod())) {
-            String apiInfo = vo.getService() + "." + vo.getMethod();
-            api1 = new TApiMetaData();
-            api1.setAgentId(agentId);
-            api1.setAgentStartTime(this.acceptedTimeService.getAcceptedTime());
-            api1.setApiId(apiInfo.hashCode());
-            api1.setApiInfo(apiInfo);
-            this.hbaseApiMetaDataDao.insert(api1);
+            String apiInfo = vo.getService() + "." + vo.getMethod() + "()";
+            api = new TApiMetaData();
+            api.setAgentId(agentId);
+            api.setAgentStartTime(agentTime);
+            api.setApiId(apiInfo.hashCode());
+            api.setApiInfo(apiInfo);
+            this.hbaseApiMetaDataDao.insert(api);
         }
 
         TSpan span = new TSpan();
@@ -266,37 +295,99 @@ public class SpanServiceImpl implements SpanService {
         span.setRpc(vo.getService() + "." + vo.getMethod());
 
         span.setStartTime(now);
-        span.setAgentStartTime(this.acceptedTimeService.getAcceptedTime());
+        span.setAgentStartTime(agentTime);
         span.setServiceType(ThriftConstants.THRIFT_SERVER.getCode());
         span.setApplicationServiceType(SpringBootConstants.SERVICE_TYPE.getCode());
         span.setSpanEventList(new ArrayList<TSpanEvent>());
-
+        span.setElapsed(vo.getElapsed());
         span.setTotal(parseLong(vo.getTotal()));
-        if (api1 != null) {
-            span.setApiId(api1.getApiId());
+        if (api != null) {
+            span.setApiId(api.getApiId());
         }
 
         TSpanEvent event1 = new TSpanEvent();
         event1.setServiceType(MySqlConstants.MYSQL.getCode());
-        event1.setSequence((short) 1);
+        event1.setSequence((short) 0);
         event1.setDestinationId(vo.getDbName());
         event1.setEndPoint(vo.getDbIp());
+        event1.setNextSpanId(-1);
+        event1.setApiId(0);
+        event1.setDepth(1);
+//        event1.setStartElapsed(100);
+//        event1.setEndElapsed(200);
+        event1.setAnnotations(new ArrayList<>());
+
+        // api
+        TApiMetaData api2 = new TApiMetaData();
+        api2.setAgentId(agentId);
+        api2.setAgentStartTime(agentTime);
+        api2.setApiInfo("Jdbc.jdbcProxy()");
+        api2.setApiId(api2.getApiInfo().hashCode());
+        this.hbaseApiMetaDataDao.insert(api2);
 
         TSpanEvent event2 = new TSpanEvent();
         event2.setServiceType(MySqlConstants.MYSQL_EXECUTE_QUERY.getCode());
-        event2.setSequence((short) 2);
+        event2.setSequence((short) 1);
         event2.setDestinationId(vo.getDbName());
         event2.setEndPoint(vo.getDbIp());
+        event2.setNextSpanId(-1);
+        event2.setApiId(api2.getApiId());
+//        event2.setEndElapsed(200);
+        event2.setDepth(1);
+        event2.setAnnotations(new ArrayList<>());
+
+        // jdbc
+        TAnnotationValue jdbc_value = new TAnnotationValue();
+        jdbc_value.setIntValue(MethodType.ANNOTATION);
+        jdbc_value.setStringValue(vo.getDbUrl());
+
+        TAnnotation jdbc_annotation = new TAnnotation();
+        jdbc_annotation.setKey(AnnotationKey.API.getCode());
+        jdbc_annotation.setValue(jdbc_value);
+        event1.getAnnotations().add(jdbc_annotation);
+
+        // sql
+        if (vo.getDbSql() != null && !"".equals(vo.getDbSql())) {
+            TSqlMetaData sql_MetaDataBo = new TSqlMetaData();
+            sql_MetaDataBo.setAgentId(agentId);
+            sql_MetaDataBo.setAgentStartTime(agentTime);
+            sql_MetaDataBo.setSql(vo.getDbSql());
+            sql_MetaDataBo.setSqlId(sql_MetaDataBo.getSql().hashCode());
+            this.sqlMetaDataDao.insert(sql_MetaDataBo);
+
+            TIntStringStringValue sql_intString = new TIntStringStringValue();
+            sql_intString.setIntValue(sql_MetaDataBo.getSqlId());
+            sql_intString.setStringValue1(sql_MetaDataBo.getSql());
+
+            TAnnotationValue sql_value = new TAnnotationValue();
+//            sql_value.setIntValue(MethodType.ANNOTATION);
+            sql_value.setIntStringStringValue(sql_intString);
+
+            TAnnotation sql_annotation = new TAnnotation();
+            sql_annotation.setKey(AnnotationKey.SQL_ID.getCode());
+            sql_annotation.setValue(sql_value);
+            event2.getAnnotations().add(sql_annotation);
+        }
+
 
         // 0是没错误的
-        if ("true".equals(vo.getStatus())) {
+        if ("true".equals(vo.getStatus()) || "0".equals(vo.getStatus())) {
         } else {
+            TStringMetaData metaData = new TStringMetaData();
+            metaData.setAgentId(agentId);
+            metaData.setAgentStartTime(agentTime);
+            metaData.setStringValue("jdbc");
+            metaData.setStringId(metaData.getStringValue().hashCode());
+            this.stringMetaDataDao.insert(metaData);
+
             TIntStringValue exception = new TIntStringValue();
+            exception.setIntValue(metaData.getStringId());
             exception.setStringValue(vo.getStatus());
             event2.setExceptionInfo(exception);
         }
-
-        span.getSpanEventList().add(event1);
+        if(StringUtils.isNotEmpty(vo.getDbName())) {
+            span.getSpanEventList().add(event1);
+        }
         span.getSpanEventList().add(event2);
         this.spanHandler.handleSimple(span);
     }
@@ -305,43 +396,91 @@ public class SpanServiceImpl implements SpanService {
     public void insertRedis(SpanVO vo) {
         logger.info("insertRedis - " + vo);
 
-        String agentId = vo.getAppName() + "-" + vo.getIpAddress();
+        long agentTime = this.acceptedTimeService.getAcceptedTime();
+        String agentId = getAgentId(vo.getAppName(), vo.getIpAddress());
+        long now = vo.getStartTime() <= 0 ? System.currentTimeMillis() : vo.getStartTime();
 
-        long now = System.currentTimeMillis();
-        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, now, 1);
+        //        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, now, 1);
+        byte[] transactionId = TransactionIdUtils.formatBytes(vo.getTraceId(), 0, 0);
+
         long parentSpanId = vo.getParentSpanId().hashCode();
         long spanId = vo.getSpanId().hashCode();
+
+        TApiMetaData api = null;
+        if (StringUtils.isNotEmpty(vo.getService()) && StringUtils.isNotEmpty(vo.getMethod())) {
+            String apiInfo = vo.getService() + "." + vo.getMethod() + "()";
+            api = new TApiMetaData();
+            api.setAgentId(agentId);
+            api.setAgentStartTime(agentTime);
+            api.setApiId(apiInfo.hashCode());
+            api.setApiInfo(apiInfo);
+            this.hbaseApiMetaDataDao.insert(api);
+        }
 
         TSpan span = new TSpan();
         span.setAgentId(agentId);
         span.setApplicationName(vo.getAppName());
         span.setTransactionId(transactionId);
-        span.setAgentStartTime(this.acceptedTimeService.getAcceptedTime());
         span.setSpanId(spanId <= 0 ? vo.hashCode() : spanId);
         span.setParentSpanId(parentSpanId);
+        span.setRpc(vo.getService() + "." + vo.getMethod());
 
         span.setStartTime(now);
+        span.setAgentStartTime(agentTime);
+        span.setElapsed(vo.getElapsed());
         span.setServiceType(ThriftConstants.THRIFT_SERVER.getCode());
         span.setApplicationServiceType(SpringBootConstants.SERVICE_TYPE.getCode());
         span.setSpanEventList(new ArrayList<TSpanEvent>());
 
-        // 0是没错误的
-//        if ("NORMAL".equals(vo.getStatus())) {
-//            span.setErr(0);
-//        } else {
-//            span.setErr(1);
-//        }
         span.setTotal(parseLong(vo.getTotal()));
+        if (api != null) {
+            span.setApiId(api.getApiId());
+        }
+
+        // redis connect
+        TAnnotationValue conn_value = new TAnnotationValue();
+        conn_value.setStringValue(vo.getRedisAddress());
+
+        TAnnotation conn_annotation = new TAnnotation();
+        conn_annotation.setKey(AnnotationKey.API.getCode());
+        conn_annotation.setValue(conn_value);
+
+
+        // redis connect
+        TAnnotationValue method_value = new TAnnotationValue();
+        method_value.setStringValue(vo.getRedisMethod());
+
+        TAnnotation method_annotation = new TAnnotation();
+        method_annotation.setKey(AnnotationKey.API.getCode());
+        method_annotation.setValue(method_value);
+
 
         TSpanEvent event1 = new TSpanEvent();
         event1.setServiceType(RedisConstants.REDIS.getCode());
-        event1.setSequence((short) 1);
-        event1.setDestinationId("redis");
-        event1.setEndPoint(vo.getRedisIp());
+        event1.setSequence((short) 0);
+        event1.setDestinationId(vo.getDbName());
+        event1.setEndPoint(vo.getRedisAddress());
+        event1.setDestinationId(vo.getRedisAddress());
+        event1.setNextSpanId(-1);
+        event1.setApiId(0);
+        event1.setDepth(1);
+        event1.setAnnotations(new ArrayList<>());
+        event1.getAnnotations().add(conn_annotation);
+        event1.getAnnotations().add(method_annotation);
+
+
         // 0是没错误的
-        if ("NORMAL".equals(vo.getStatus())) {
+        if ("info".equals(vo.getStatus())) {
         } else {
+            TStringMetaData metaData = new TStringMetaData();
+            metaData.setAgentId(agentId);
+            metaData.setAgentStartTime(agentTime);
+            metaData.setStringValue("redis");
+            metaData.setStringId(metaData.getStringValue().hashCode());
+            this.stringMetaDataDao.insert(metaData);
+
             TIntStringValue exception = new TIntStringValue();
+            exception.setIntValue(metaData.getStringId());
             exception.setStringValue(vo.getStatus());
             event1.setExceptionInfo(exception);
         }
@@ -354,8 +493,8 @@ public class SpanServiceImpl implements SpanService {
         logger.info("insertRpcProvider - " + vo);
         long agentTime = this.acceptedTimeService.getAcceptedTime();
 
-        String agentId = vo.getAppName() + "-" + vo.getIpAddress();
-        long now = System.currentTimeMillis();
+        String agentId = getAgentId(vo.getAppName(), vo.getIpAddress());
+        long now = vo.getStartTime() <= 0 ? System.currentTimeMillis() : vo.getStartTime();
 
         String url = vo.getService() + "." + vo.getMethod() + "()";
         TApiMetaData api = new TApiMetaData();
@@ -366,7 +505,7 @@ public class SpanServiceImpl implements SpanService {
         this.hbaseApiMetaDataDao.insert(api);
 
 //        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, now, 1);
-        byte[] transactionId = TransactionIdUtils.formatBytes(vo.getTraceId(), vo.getTraceTime(), vo.getTraceId().hashCode());
+        byte[] transactionId = TransactionIdUtils.formatBytes(vo.getTraceId(), 0, 0);
         long parentSpanId = "0".equals(vo.getParentSpanId()) ? -1 : vo.getParentSpanId().hashCode();
         long spanId = vo.getSpanId().hashCode();
 
@@ -380,6 +519,7 @@ public class SpanServiceImpl implements SpanService {
 
         span.setStartTime(now);
         span.setAgentStartTime(agentTime);
+        span.setElapsed(vo.getElapsed());
         span.setEndPoint(vo.getIpAddress());
         span.setAcceptorHost(vo.getIpAddress());
         span.setRpc(url);
@@ -391,7 +531,7 @@ public class SpanServiceImpl implements SpanService {
         span.setTotal(parseLong(vo.getTotal()));
 
         span.setParentApplicationName(vo.getClientAppName());
-        span.setRemoteAddr(vo.getClientIp());
+        span.setRemoteAddr(vo.getRemoteType() + " " + vo.getIpAddress());
         span.setParentApplicationType(SpringBootConstants.SERVICE_TYPE.getCode());
         this.spanHandler.handleSimple(span);
     }
@@ -400,20 +540,21 @@ public class SpanServiceImpl implements SpanService {
     public void insertRpcClient(SpanVO vo) {
         logger.info("insertRpcClient - " + vo);
 
-        String agentId = vo.getAppName() + "-" + vo.getIpAddress();
+        long agentTime = this.acceptedTimeService.getAcceptedTime();
+
+        String agentId = getAgentId(vo.getAppName(), vo.getIpAddress());
         long now = System.currentTimeMillis();
 
-        String url = vo.getUrl();
-
-        TApiMetaData api1 = new TApiMetaData();
-        api1.setAgentId(agentId);
-        api1.setAgentStartTime(this.acceptedTimeService.getAcceptedTime());
-        api1.setApiId(url.hashCode());
-        api1.setApiInfo(url);
-        this.hbaseApiMetaDataDao.insert(api1);
+        String url = vo.getService() + "." + vo.getMethod() + "()";
+        TApiMetaData api = new TApiMetaData();
+        api.setAgentId(agentId);
+        api.setAgentStartTime(agentTime);
+        api.setApiId(url.hashCode());
+        api.setApiInfo(url);
+        this.hbaseApiMetaDataDao.insert(api);
 
 //        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, now, 1);
-        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, vo.getTraceTime(), vo.getTraceId().hashCode());
+        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, 0, vo.getTraceId().hashCode());
         long parentSpanId = "0".equals(vo.getParentSpanId()) ? -1 : vo.getParentSpanId().hashCode();
         long spanId = vo.getSpanId().hashCode();
 
@@ -429,7 +570,9 @@ public class SpanServiceImpl implements SpanService {
         span.setAgentStartTime(this.acceptedTimeService.getAcceptedTime());
         span.setEndPoint(vo.getIpAddress());
         span.setAcceptorHost(vo.getIpAddress());
-        span.setApiId(api1.getApiId());
+        if (api != null) {
+            span.setApiId(api.getApiId());
+        }
 
         // 0是没错误的
 //        if ("0".equals(vo.getStatus())) {
@@ -495,5 +638,9 @@ public class SpanServiceImpl implements SpanService {
         } catch (Exception e) {
             return -1;
         }
+    }
+
+    public static String getAgentId(String name, String ip) {
+        return name + "^" + ip;
     }
 }

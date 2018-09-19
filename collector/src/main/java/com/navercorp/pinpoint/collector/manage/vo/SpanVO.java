@@ -5,13 +5,15 @@ public class SpanVO {
     private String spanId;
     private String parentSpanId = "-1";
     private String nextSpanId;
-    private long traceTime;
 
     private String ipAddress = "";
     private String appName = "";
 
     private String status = "0";
     private String total = "-1";
+
+    private int elapsed = 0;
+    private long startTime = 0;//毫秒
 
     // http
     private String domain = "";
@@ -20,9 +22,12 @@ public class SpanVO {
     // db
     private String dbIp = "";
     private String dbName = "";
+    private String dbUrl = "";
+    private String dbSql = "";
 
     // redis
-    private String redisIp = "";
+    private String redisAddress = "";
+    private String redisMethod = "";
 
     // rpc
     private String service = "";
@@ -36,6 +41,7 @@ public class SpanVO {
     private String providerAppName = "";
     private String providerIp = "";
 
+    private String remoteType = "";
 
     public String getTraceId() {
         return traceId;
@@ -69,14 +75,6 @@ public class SpanVO {
         this.nextSpanId = nextSpanId;
     }
 
-    public long getTraceTime() {
-        return traceTime;
-    }
-
-    public void setTraceTime(long traceTime) {
-        this.traceTime = traceTime;
-    }
-
     public String getIpAddress() {
         return ipAddress;
     }
@@ -91,6 +89,38 @@ public class SpanVO {
 
     public void setAppName(String appName) {
         this.appName = appName;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getTotal() {
+        return total;
+    }
+
+    public void setTotal(String total) {
+        this.total = total;
+    }
+
+    public int getElapsed() {
+        return elapsed;
+    }
+
+    public void setElapsed(int elapsed) {
+        this.elapsed = elapsed;
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(long startTime) {
+        this.startTime = startTime;
     }
 
     public String getDomain() {
@@ -125,20 +155,36 @@ public class SpanVO {
         this.dbName = dbName;
     }
 
-    public String getRedisIp() {
-        return redisIp;
+    public String getDbUrl() {
+        return dbUrl;
     }
 
-    public void setRedisIp(String redisIp) {
-        this.redisIp = redisIp;
+    public void setDbUrl(String dbUrl) {
+        this.dbUrl = dbUrl;
     }
 
-    public String getClientIp() {
-        return clientIp;
+    public String getDbSql() {
+        return dbSql;
     }
 
-    public void setClientIp(String clientIp) {
-        this.clientIp = clientIp;
+    public void setDbSql(String dbSql) {
+        this.dbSql = dbSql;
+    }
+
+    public String getRedisAddress() {
+        return redisAddress;
+    }
+
+    public void setRedisAddress(String redisAddress) {
+        this.redisAddress = redisAddress;
+    }
+
+    public String getRedisMethod() {
+        return redisMethod;
+    }
+
+    public void setRedisMethod(String redisMethod) {
+        this.redisMethod = redisMethod;
     }
 
     public String getService() {
@@ -165,6 +211,14 @@ public class SpanVO {
         this.clientAppName = clientAppName;
     }
 
+    public String getClientIp() {
+        return clientIp;
+    }
+
+    public void setClientIp(String clientIp) {
+        this.clientIp = clientIp;
+    }
+
     public String getProviderAppName() {
         return providerAppName;
     }
@@ -181,45 +235,42 @@ public class SpanVO {
         this.providerIp = providerIp;
     }
 
-    public String getStatus() {
-        return status;
+    public String getRemoteType() {
+        return remoteType;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getTotal() {
-        return total;
-    }
-
-    public void setTotal(String total) {
-        this.total = total;
+    public void setRemoteType(String remoteType) {
+        this.remoteType = remoteType;
     }
 
     @Override
     public String toString() {
         return "SpanVO{" +
                 "traceId='" + traceId + '\'' +
-                ", spanId='" + spanId + '\'' +
-                ", parentSpanId='" + parentSpanId + '\'' +
-                ", nextSpanId='" + nextSpanId + '\'' +
-                ", traceTime=" + traceTime +
+                ", spanId=" + spanId +
+                ", parentSpanId=" + parentSpanId +
+                ", nextSpanId=" + nextSpanId +
                 ", ipAddress='" + ipAddress + '\'' +
                 ", appName='" + appName + '\'' +
                 ", status='" + status + '\'' +
                 ", total='" + total + '\'' +
+                ", elapsed=" + elapsed +
+                ", startTime=" + startTime +
                 ", domain='" + domain + '\'' +
                 ", url='" + url + '\'' +
                 ", dbIp='" + dbIp + '\'' +
                 ", dbName='" + dbName + '\'' +
-                ", redisIp='" + redisIp + '\'' +
+                ", dbUrl='" + dbUrl + '\'' +
+                ", dbSql='" + dbSql + '\'' +
+                ", redisAddress='" + redisAddress + '\'' +
+                ", redisMethod='" + redisMethod + '\'' +
                 ", service='" + service + '\'' +
                 ", method='" + method + '\'' +
                 ", clientAppName='" + clientAppName + '\'' +
                 ", clientIp='" + clientIp + '\'' +
                 ", providerAppName='" + providerAppName + '\'' +
                 ", providerIp='" + providerIp + '\'' +
+                ", remoteType='" + remoteType + '\'' +
                 '}';
     }
 }

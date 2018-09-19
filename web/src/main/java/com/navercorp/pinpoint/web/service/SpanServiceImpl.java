@@ -16,23 +16,10 @@
 
 package com.navercorp.pinpoint.web.service;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.navercorp.pinpoint.common.server.bo.AnnotationBo;
-import com.navercorp.pinpoint.common.server.bo.ApiMetaDataBo;
-import com.navercorp.pinpoint.common.server.bo.MethodTypeEnum;
-import com.navercorp.pinpoint.common.server.bo.SpanBo;
-import com.navercorp.pinpoint.common.server.bo.SqlMetaDataBo;
-import com.navercorp.pinpoint.common.server.bo.StringMetaDataBo;
+import com.navercorp.pinpoint.common.server.bo.*;
 import com.navercorp.pinpoint.common.server.util.AnnotationUtils;
 import com.navercorp.pinpoint.common.trace.AnnotationKey;
-import com.navercorp.pinpoint.common.util.AnnotationKeyUtils;
-import com.navercorp.pinpoint.common.util.DefaultSqlParser;
-import com.navercorp.pinpoint.common.util.IntStringStringValue;
-import com.navercorp.pinpoint.common.util.OutputParameterParser;
-import com.navercorp.pinpoint.common.util.SqlParser;
-import com.navercorp.pinpoint.common.util.TransactionId;
+import com.navercorp.pinpoint.common.util.*;
 import com.navercorp.pinpoint.web.calltree.span.CallTree;
 import com.navercorp.pinpoint.web.calltree.span.CallTreeIterator;
 import com.navercorp.pinpoint.web.calltree.span.SpanAlign;
@@ -41,16 +28,17 @@ import com.navercorp.pinpoint.web.dao.ApiMetaDataDao;
 import com.navercorp.pinpoint.web.dao.SqlMetaDataDao;
 import com.navercorp.pinpoint.web.dao.StringMetaDataDao;
 import com.navercorp.pinpoint.web.dao.TraceDao;
-import com.navercorp.pinpoint.web.dao.hbase.HbaseApiMetaDataDao;
 import com.navercorp.pinpoint.web.security.MetaDataFilter;
 import com.navercorp.pinpoint.web.security.MetaDataFilter.MetaData;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author emeroad
@@ -66,9 +54,6 @@ public class SpanServiceImpl implements SpanService {
     @Qualifier("hbaseTraceDaoFactory")
     private TraceDao traceDao;
 
-//    @Autowired
-    private SqlMetaDataDao sqlMetaDataDao;
-    
     @Autowired(required=false)
     private MetaDataFilter metaDataFilter;
 
@@ -78,6 +63,7 @@ public class SpanServiceImpl implements SpanService {
     @Autowired
     private StringMetaDataDao stringMetaDataDao;
 
+    private SqlMetaDataDao sqlMetaDataDao;
 
     private final SqlParser sqlParser = new DefaultSqlParser();
     private final OutputParameterParser outputParameterParser = new OutputParameterParser();
@@ -100,7 +86,7 @@ public class SpanServiceImpl implements SpanService {
         final SpanResult result = order(spans, selectedSpanHint);
         final CallTreeIterator callTreeIterator = result.getCallTree();
         final List<SpanAlign> values = callTreeIterator.values();
-        
+
         transitionDynamicApiId(values);
         transitionSqlId(values);
         transitionCachedString(values);
@@ -108,7 +94,6 @@ public class SpanServiceImpl implements SpanService {
         // TODO need to at least show the row data when root span is not found. 
         return result;
     }
-
 
 
     private void transitionAnnotation(List<SpanAlign> spans, AnnotationReplacementCallback annotationReplacementCallback) {
@@ -258,7 +243,7 @@ public class SpanServiceImpl implements SpanService {
 
                 // may be able to get a more accurate data using agentIdentifier.
                 List<ApiMetaDataBo> apiMetaDataList = apiMetaDataDao.getApiMetaData(spanAlign.getAgentId(), spanAlign.getAgentStartTime(), apiId);
-                logger.debug("***** getApiMetaData **** agentId=" + spanAlign.getAgentId() + ", AgentStartTime=" + spanAlign.getAgentStartTime() + ", apiId=" + apiId + ", sise=" + apiMetaDataList.size());
+                logger.debug("***** getApiMetaData **** agentId=" + spanAlign.getAgentId() + ", AgentStartTime=" + spanAlign.getAgentStartTime() + ", apiId=" + apiId + ", sise=" + apiMetaDataList.size() + ", " + (apiMetaDataList.size() > 0 ? apiMetaDataList.get(0).getApiInfo() : ""));
                 int size = apiMetaDataList.size();
                 if (size == 0) {
                     AnnotationBo api = new AnnotationBo();
@@ -311,6 +296,7 @@ public class SpanServiceImpl implements SpanService {
                     final int cachedArgsKey = annotationBo.getKey();
                     int stringMetaDataId = (Integer) annotationBo.getValue();
                     List<StringMetaDataBo> stringMetaList = stringMetaDataDao.getStringMetaData(spanAlign.getAgentId(), spanAlign.getAgentStartTime(), stringMetaDataId);
+                    logger.debug("***** transitionCachedString **** agentId=" + spanAlign.getAgentId() + ", AgentStartTime()=" + spanAlign.getAgentStartTime() + ", stringMetaDataId=" + stringMetaDataId + ", " + (stringMetaList.size() > 0 ? stringMetaList.get(0).getStringValue() : "0"));
                     int size = stringMetaList.size();
                     if (size == 0) {
                         logger.warn("StringMetaData not Found {}/{}/{}", spanAlign.getAgentId(), stringMetaDataId, spanAlign.getAgentStartTime());
@@ -359,7 +345,7 @@ public class SpanServiceImpl implements SpanService {
     private StringMetaDataBo selectStringMetaData(String agentId, int cacheId, long agentStartTime) {
         final List<StringMetaDataBo> metaDataList = stringMetaDataDao.getStringMetaData(agentId, agentStartTime, cacheId);
         if (CollectionUtils.isEmpty(metaDataList)) {
-            logger.warn("StringMetaData not Found agent:{}, cacheId{}, agentStartTime:{}", agentId, cacheId, agentStartTime);
+            logger.warn("StringMetaData not Found agent:{}, cacheId:{}, agentStartTime:{}", agentId, cacheId, agentStartTime);
             StringMetaDataBo stringMetaDataBo = new StringMetaDataBo(agentId, agentStartTime, cacheId);
             stringMetaDataBo.setStringValue("STRING-META-DATA-NOT-FOUND");
             return stringMetaDataBo;
@@ -395,7 +381,7 @@ public class SpanServiceImpl implements SpanService {
             return apiMetaDataBo.getApiInfo();
         }
     }
-    
+
     private String getApiTagInfo(ApiMetaDataBo apiMetaDataBo) {
         return apiMetaDataBo.getApiInfo();
     }

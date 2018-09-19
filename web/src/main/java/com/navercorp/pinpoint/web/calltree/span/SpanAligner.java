@@ -21,10 +21,8 @@ import com.navercorp.pinpoint.common.server.bo.SpanEventBo;
 import com.navercorp.pinpoint.common.util.CollectionUtils;
 import com.navercorp.pinpoint.thrift.dto.TApiMetaData;
 import com.navercorp.pinpoint.web.dao.ApiMetaDataDao;
-import com.navercorp.pinpoint.web.dao.hbase.HbaseApiMetaDataDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
 
@@ -61,18 +59,25 @@ public class SpanAligner {
         for (SpanBo span : spans) {
             spanMap.put(span.getSpanId() + "", span);
             logger.info("SpanId=" + span.getSpanId() + ", ParentSpanId=" + span.getParentSpanId());
-//            for (SpanEventBo event : span.getSpanEventBoList()) {
-//                logger.info("----SpanId=" + span.getSpanId() + ", ParentSpanId=" + span.getParentSpanId() + ", apiid=" + event.getApiId() + ", nextSpanId=" + event.getNextSpanId());
-//            }
         }
         for (SpanBo span : spans) {
             // 找到自己的parent，并且将parent的event的next设置成自己spanId
             SpanBo parentSpan = spanMap.get(span.getParentSpanId() + "");
             if (parentSpan != null) {
-                if (parentSpan.getSpanEventBoList() != null && parentSpan.getSpanEventBoList().size() > 0) {
-                    parentSpan.getSpanEventBoList().get(parentSpan.getSpanEventBoList().size() - 1).setNextSpanId(span.getSpanId());
-                } else {
-                    String service = "com.zhaopin.thrift.rpc.Proxy.proxy()";
+//                if (parentSpan.getSpanEventBoList() != null && parentSpan.getSpanEventBoList().size() > 0) {
+//                    parentSpan.getSpanEventBoList().get(parentSpan.getSpanEventBoList().size() - 1).setNextSpanId(span.getSpanId());
+//                } else
+                {
+                    String service = "com.zhaopin.thrift.Proxy.proxy()";
+                    if (span.getRemoteAddr() != null && span.getRemoteAddr().startsWith("http")) {
+                        service = "com.zhaopin.thrift.HttpProxy.httpProxy()";
+                    } else if (span.getRemoteAddr() != null && span.getRemoteAddr().startsWith("rpc")) {
+                        service = "com.zhaopin.thrift.RpcProxy.rpcProxy()";
+                    }
+
+                    span.setParentApplicationId(parentSpan.getApplicationId());
+                    span.setParentApplicationServiceType(parentSpan.getApplicationServiceType());
+
                     TApiMetaData api = new TApiMetaData();
                     api.setAgentId(parentSpan.getAgentId());
                     api.setAgentStartTime(parentSpan.getAgentStartTime());
@@ -85,7 +90,8 @@ public class SpanAligner {
                     event.setApiId(service.hashCode());
                     event.setDestinationId(parentSpan.getEndPoint());
                     event.setEndPoint(parentSpan.getEndPoint());
-                    event.setSequence(Short.parseShort("0"));
+//                    event.setSequence(Short.parseShort("0"));
+                    event.setSequence(Short.parseShort(parentSpan.getSpanEventBoList().size() + ""));
                     event.setDepth(1);
                     event.setNextSpanId(span.getSpanId());
                     parentSpan.getSpanEventBoList().add(event);

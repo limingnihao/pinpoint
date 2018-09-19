@@ -73,6 +73,8 @@ public class SpanHandler implements SimpleHandler {
             final TSpan tSpan = (TSpan) tbase;
             logger.debug("++++++++++++++++++Received {}", tSpan);
             final SpanBo spanBo = spanFactory.buildSpanBo(tSpan);
+
+            // 这里插入spanId等调用链数据
             traceDao.insert(spanBo);
             applicationTraceIndexDao.insert(tSpan);
 

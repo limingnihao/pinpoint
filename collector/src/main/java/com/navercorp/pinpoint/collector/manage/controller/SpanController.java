@@ -91,6 +91,7 @@ public class SpanController {
 
     @RequestMapping("insertRpcProvider")
     public String insertRpcProvider(SpanVO vo) {
+        vo.setRemoteType("rpc");
         this.spanService.insertRpcProvider(vo);
         return "ok";
     }
@@ -99,6 +100,24 @@ public class SpanController {
     public String insertRpcProviderJson(@RequestBody String json) {
         SpanVO vo = JSONObject.parseObject(json, SpanVO.class);
         if (vo != null) {
+            vo.setRemoteType("rpc");
+            this.spanService.insertRpcProvider(vo);
+        }
+        return "ok";
+    }
+
+    @RequestMapping("insertHttpProvider")
+    public String insertHttpProvider(SpanVO vo) {
+        vo.setRemoteType("http");
+        this.spanService.insertRpcProvider(vo);
+        return "ok";
+    }
+
+    @RequestMapping("insertHttpProviderJson")
+    public String insertHttpProviderJson(@RequestBody String json) {
+        SpanVO vo = JSONObject.parseObject(json, SpanVO.class);
+        if (vo != null) {
+            vo.setRemoteType("http");
             this.spanService.insertRpcProvider(vo);
         }
         return "ok";
