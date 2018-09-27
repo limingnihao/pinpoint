@@ -16,20 +16,20 @@
 
 package com.navercorp.pinpoint.common.server.bo;
 
+import com.navercorp.pinpoint.common.util.TransactionId;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import com.navercorp.pinpoint.common.util.TransactionId;
 
 /**
  * @author emeroad
  */
-public class SpanBo implements Event, BasicSpan {
+public class SpanBo implements Event, BasicSpan, Comparable {
 
     // version 0 means that the type of prefix's size is int
     private byte version = 0;
 
-//  private AgentKeyBo agentKeyBo;
+    //  private AgentKeyBo agentKeyBo;
     private String agentId;
     private String applicationId;
     private long agentStartTime;
@@ -62,7 +62,7 @@ public class SpanBo implements Event, BasicSpan {
     private int exceptionId;
     private String exceptionMessage;
     private String exceptionClass;
-    
+
     private Short applicationServiceType;
 
     private String acceptorHost;
@@ -72,7 +72,6 @@ public class SpanBo implements Event, BasicSpan {
 
     // shiming.li update
     private long total = 1;
-
 
 
     public SpanBo() {
@@ -102,7 +101,7 @@ public class SpanBo implements Event, BasicSpan {
     public void setTransactionId(TransactionId transactionId) {
         this.transactionId = transactionId;
     }
-    
+
     public String getAgentId() {
         return agentId;
     }
@@ -232,7 +231,7 @@ public class SpanBo implements Event, BasicSpan {
     public void setServiceType(short serviceType) {
         this.serviceType = serviceType;
     }
-    
+
     public int getErrCode() {
         return errCode;
     }
@@ -295,9 +294,9 @@ public class SpanBo implements Event, BasicSpan {
     public void setExceptionClass(String exceptionClass) {
         this.exceptionClass = exceptionClass;
     }
-    
+
     public void setApplicationServiceType(Short applicationServiceType) {
-        this.applicationServiceType  = applicationServiceType;
+        this.applicationServiceType = applicationServiceType;
     }
 
     public boolean hasApplicationServiceType() {
@@ -329,8 +328,8 @@ public class SpanBo implements Event, BasicSpan {
     }
 
     /**
-     * @see com.navercorp.pinpoint.common.trace.LoggingInfo
      * @return loggingInfo key
+     * @see com.navercorp.pinpoint.common.trace.LoggingInfo
      */
     public byte getLoggingTransactionInfo() {
         return loggingTransactionInfo;
@@ -381,5 +380,15 @@ public class SpanBo implements Event, BasicSpan {
                 ", remoteAddr='" + remoteAddr + '\'' +
                 ", loggingTransactionInfo=" + loggingTransactionInfo +
                 '}';
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        SpanBo other = (SpanBo) o;
+        if (this.startTime > other.getStartTime()) {
+            return 1;
+        } else {
+            return -1;
+        }
     }
 }

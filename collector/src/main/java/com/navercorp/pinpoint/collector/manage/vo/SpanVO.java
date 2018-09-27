@@ -12,8 +12,8 @@ public class SpanVO {
     private String status = "0";
     private String total = "-1";
 
-    private int elapsed = 0;
-    private long startTime = 0;//毫秒
+    private String elapsed = "";
+    private String startTime = "";//毫秒
 
     // http
     private String domain = "";
@@ -107,19 +107,19 @@ public class SpanVO {
         this.total = total;
     }
 
-    public int getElapsed() {
+    public String getElapsed() {
         return elapsed;
     }
 
-    public void setElapsed(int elapsed) {
+    public void setElapsed(String elapsed) {
         this.elapsed = elapsed;
     }
 
-    public long getStartTime() {
+    public String getStartTime() {
         return startTime;
     }
 
-    public void setStartTime(long startTime) {
+    public void setStartTime(String startTime) {
         this.startTime = startTime;
     }
 
@@ -247,15 +247,15 @@ public class SpanVO {
     public String toString() {
         return "SpanVO{" +
                 "traceId='" + traceId + '\'' +
-                ", spanId=" + spanId +
-                ", parentSpanId=" + parentSpanId +
-                ", nextSpanId=" + nextSpanId +
+                ", spanId='" + spanId + '\'' +
+                ", parentSpanId='" + parentSpanId + '\'' +
+                ", nextSpanId='" + nextSpanId + '\'' +
                 ", ipAddress='" + ipAddress + '\'' +
                 ", appName='" + appName + '\'' +
                 ", status='" + status + '\'' +
                 ", total='" + total + '\'' +
-                ", elapsed=" + elapsed +
-                ", startTime=" + startTime +
+                ", elapsed='" + elapsed + '\'' +
+                ", startTime='" + startTime + '\'' +
                 ", domain='" + domain + '\'' +
                 ", url='" + url + '\'' +
                 ", dbIp='" + dbIp + '\'' +

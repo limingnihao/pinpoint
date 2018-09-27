@@ -60,7 +60,10 @@ public class SpanAligner {
             spanMap.put(span.getSpanId() + "", span);
             logger.info("SpanId=" + span.getSpanId() + ", ParentSpanId=" + span.getParentSpanId());
         }
-        for (SpanBo span : spans) {
+        SpanBo[] spanArray = new SpanBo[spans.size()];
+        spans.toArray(spanArray);
+        Arrays.sort(spanArray);
+        for (SpanBo span : Arrays.asList(spanArray)) {
             // 找到自己的parent，并且将parent的event的next设置成自己spanId
             SpanBo parentSpan = spanMap.get(span.getParentSpanId() + "");
             if (parentSpan != null) {

@@ -132,7 +132,8 @@ public class SpanServiceImpl implements SpanService {
         long agentTime = this.acceptedTimeService.getAcceptedTime();
         logger.info("insertUser - " + vo + ", agentTime=" + agentTime);
         String agentId = getAgentId(vo.getAppName(), vo.getIpAddress());
-        long now = vo.getStartTime() <= 0 ? System.currentTimeMillis() : vo.getStartTime();
+        long now = parseLong(vo.getStartTime(), System.currentTimeMillis());
+        int elapsed = parseInt(vo.getElapsed(), 0);
 
         String service = vo.getService() + "." + vo.getMethod() + "()";
         TApiMetaData api = new TApiMetaData();
@@ -158,7 +159,7 @@ public class SpanServiceImpl implements SpanService {
 
         span.setStartTime(now);
         span.setAgentStartTime(agentTime);
-        span.setElapsed(vo.getElapsed());
+        span.setElapsed(elapsed);
 
         span.setRpc(vo.getUrl());
         span.setServiceType(ServiceType.USER.getCode());
@@ -174,7 +175,8 @@ public class SpanServiceImpl implements SpanService {
 
         long agentTime = this.acceptedTimeService.getAcceptedTime();
         String agentId = getAgentId(vo.getAppName(), vo.getIpAddress());
-        long now = vo.getStartTime() <= 0 ? System.currentTimeMillis() : vo.getStartTime();
+        long now = parseLong(vo.getStartTime(), System.currentTimeMillis());
+        int elapsed = parseInt(vo.getElapsed(), 0);
 
         //        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, now, 1);
         byte[] transactionId = TransactionIdUtils.formatBytes(vo.getTraceId(), 0, 0);
@@ -206,7 +208,7 @@ public class SpanServiceImpl implements SpanService {
 
         span.setStartTime(now);
         span.setAgentStartTime(agentTime);
-        span.setElapsed(vo.getElapsed());
+        span.setElapsed(elapsed);
         span.setServiceType(ThriftConstants.THRIFT_SERVER.getCode());
         span.setApplicationServiceType(SpringBootConstants.SERVICE_TYPE.getCode());
         span.setSpanEventList(new ArrayList<TSpanEvent>());
@@ -268,7 +270,9 @@ public class SpanServiceImpl implements SpanService {
         logger.info("insertDb - " + vo);
         long agentTime = this.acceptedTimeService.getAcceptedTime();
         String agentId = getAgentId(vo.getAppName(), vo.getIpAddress());
-        long now = vo.getStartTime() <= 0 ? System.currentTimeMillis() : vo.getStartTime();
+        long now = parseLong(vo.getStartTime(), System.currentTimeMillis());
+        int elapsed = parseInt(vo.getElapsed(), 0);
+
 //        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, now, 1);
         byte[] transactionId = TransactionIdUtils.formatBytes(vo.getTraceId(), 0, 0);
 
@@ -299,7 +303,7 @@ public class SpanServiceImpl implements SpanService {
         span.setServiceType(ThriftConstants.THRIFT_SERVER.getCode());
         span.setApplicationServiceType(SpringBootConstants.SERVICE_TYPE.getCode());
         span.setSpanEventList(new ArrayList<TSpanEvent>());
-        span.setElapsed(vo.getElapsed());
+        span.setElapsed(elapsed);
         span.setTotal(parseLong(vo.getTotal()));
         if (api != null) {
             span.setApiId(api.getApiId());
@@ -385,7 +389,7 @@ public class SpanServiceImpl implements SpanService {
             exception.setStringValue(vo.getStatus());
             event2.setExceptionInfo(exception);
         }
-        if(StringUtils.isNotEmpty(vo.getDbName())) {
+        if (StringUtils.isNotEmpty(vo.getDbName())) {
             span.getSpanEventList().add(event1);
         }
         span.getSpanEventList().add(event2);
@@ -398,7 +402,8 @@ public class SpanServiceImpl implements SpanService {
 
         long agentTime = this.acceptedTimeService.getAcceptedTime();
         String agentId = getAgentId(vo.getAppName(), vo.getIpAddress());
-        long now = vo.getStartTime() <= 0 ? System.currentTimeMillis() : vo.getStartTime();
+        long now = parseLong(vo.getStartTime(), System.currentTimeMillis());
+        int elapsed = parseInt(vo.getElapsed(), 0);
 
         //        byte[] transactionId = TransactionIdUtils.formatBytes(agentId, now, 1);
         byte[] transactionId = TransactionIdUtils.formatBytes(vo.getTraceId(), 0, 0);
@@ -427,7 +432,7 @@ public class SpanServiceImpl implements SpanService {
 
         span.setStartTime(now);
         span.setAgentStartTime(agentTime);
-        span.setElapsed(vo.getElapsed());
+        span.setElapsed(elapsed);
         span.setServiceType(ThriftConstants.THRIFT_SERVER.getCode());
         span.setApplicationServiceType(SpringBootConstants.SERVICE_TYPE.getCode());
         span.setSpanEventList(new ArrayList<TSpanEvent>());
@@ -494,7 +499,9 @@ public class SpanServiceImpl implements SpanService {
         long agentTime = this.acceptedTimeService.getAcceptedTime();
 
         String agentId = getAgentId(vo.getAppName(), vo.getIpAddress());
-        long now = vo.getStartTime() <= 0 ? System.currentTimeMillis() : vo.getStartTime();
+
+        long now = parseLong(vo.getStartTime(), System.currentTimeMillis());
+        int elapsed = parseInt(vo.getElapsed(), 0);
 
         String url = vo.getService() + "." + vo.getMethod() + "()";
         TApiMetaData api = new TApiMetaData();
@@ -519,7 +526,7 @@ public class SpanServiceImpl implements SpanService {
 
         span.setStartTime(now);
         span.setAgentStartTime(agentTime);
-        span.setElapsed(vo.getElapsed());
+        span.setElapsed(elapsed);
         span.setEndPoint(vo.getIpAddress());
         span.setAcceptorHost(vo.getIpAddress());
         span.setRpc(url);
@@ -633,10 +640,22 @@ public class SpanServiceImpl implements SpanService {
     }
 
     public static long parseLong(String val) {
+        return parseLong(val, -1);
+    }
+
+    public static long parseLong(String val, long def) {
         try {
-            return (long) Double.parseDouble(val);
+            return Long.parseLong(val);
         } catch (Exception e) {
-            return -1;
+            return def;
+        }
+    }
+
+    public static int parseInt(String val, int def) {
+        try {
+            return Integer.parseInt(val);
+        } catch (Exception e) {
+            return def;
         }
     }
 
