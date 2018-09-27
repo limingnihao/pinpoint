@@ -1,3 +1,12 @@
+---
+title: Setting Alarm
+keywords: alarm
+last_updated: Feb 1, 2018
+sidebar: mydoc_sidebar
+permalink: alarm.html
+disqus: false
+---
+
 [English](#alarm) | [한글](#alarm-1)
 # Alarm
 
@@ -8,19 +17,19 @@ These conditions are (by default) checked every 3 minutes by a background batch 
 ## 1. User Guide
 
 1) Configuration menu
-![alarm_figure01.gif](img/alarm/alarm_figure01.gif)
+![alarm_figure01.gif](images/alarm/alarm_figure01.gif)
 
 2) Registering users
-![alarm_figure02.gif](img/alarm/alarm_figure02.gif)
+![alarm_figure02.gif](images/alarm/alarm_figure02.gif)
 
 3) Creating user groups
-![alarm_figure03.gif](img/alarm/alarm_figure03.gif)
+![alarm_figure03.gif](images/alarm/alarm_figure03.gif)
 
 4) Adding users to user group
-![alarm_figure04.gif](img/alarm/alarm_figure04.gif)
+![alarm_figure04.gif](images/alarm/alarm_figure04.gif)
 
 5) Setting alarm rules
-![alarm_figure05.gif](img/alarm/alarm_figure05.gif)
+![alarm_figure05.gif](images/alarm/alarm_figure05.gif)
 
 **Alarm Rules**
 ```
@@ -148,26 +157,26 @@ jdbc.url=jdbc:mysql://localhost:13306/pinpoint?characterEncoding=UTF-8
 jdbc.username=admin
 jdbc.password=admin
 ```
-Create tables by running *[CreateTableStatement-mysql.sql](../web/src/main/resources/sql/CreateTableStatement-mysql.sql)*, and *[SpringBatchJobRepositorySchema-mysql.sql](../web/src/main/resources/sql/SpringBatchJobRepositorySchema-mysql.sql)*.
+Create tables by running *[CreateTableStatement-mysql.sql](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/sql/CreateTableStatement-mysql.sql)*, and *[SpringBatchJobRepositorySchema-mysql.sql](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/sql/SpringBatchJobRepositorySchema-mysql.sql)*.
 
 ### 4) Others
-**1) You may start the alarm batch in a separate process** - Simply start the spring batch job using the *[applicationContext-alarmJob.xml](../web/src/main/resources/batch/applicationContext-alarmJob.xml)* file inside the Pinpoint-web module.
+**1) You may start the alarm batch in a separate process** - Simply start the spring batch job using the *[applicationContext-alarmJob.xml](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/batch/applicationContext-alarmJob.xml)* file inside the Pinpoint-web module.
 
-**2) You may change the batch execution period by modifying the cron expression in *[applicationContext-batch-schedule.xml](../web/src/main/resources/batch/applicationContext-batch-schedule.xml)* file**
+**2) You may change the batch execution period by modifying the cron expression in *[applicationContext-batch-schedule.xml](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/batch/applicationContext-batch-schedule.xml)* file**
 ```
 <task:scheduled-tasks scheduler="scheduler">
     <task:scheduled ref="batchJobLauncher" method="alarmJob" cron="0 0/3 * * * *" />
 </task:scheduled-tasks>
 ```
 
-**3) Ways to improve alarm batch performance** - The alarm batch was designed to run concurrently. If you have a lot of applications with alarms registered, you may increase the size of the executor's thread pool by modifying `pool-size` in *[applicationContext-batch.xml](../web/src/main/resources/batch/applicationContext-batch.xml)* file.
+**3) Ways to improve alarm batch performance** - The alarm batch was designed to run concurrently. If you have a lot of applications with alarms registered, you may increase the size of the executor's thread pool by modifying `pool-size` in *[applicationContext-batch.xml](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/batch/applicationContext-batch.xml)* file.
 
 Note that increasing this value will result in higher resource usage.
 ```
 <task:executor id="poolTaskExecutorForPartition" pool-size="1" />
 ```
 
-If there are a lot of alarms registered to applications, you may set the `alarmStep` registered in *[applicationContext-batch.xml](../web/src/main/resources/batch/applicationContext-batch.xml)* file to run concurrently.
+If there are a lot of alarms registered to applications, you may set the `alarmStep` registered in *[applicationContext-batch.xml](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/batch/applicationContext-batch.xml)* file to run concurrently.
 ```
 <step id="alarmStep" xmlns="http://www.springframework.org/schema/batch">
     <tasklet task-executor="poolTaskExecutorForStep" throttle-limit="3">
@@ -181,8 +190,8 @@ If there are a lot of alarms registered to applications, you may set the `alarmS
 Pinpoint Web uses Mysql to persist users, user groups, and alarm configurations.<br/>
 However Quickstart uses MockDAO to reduce memory usage.<br/>
 Therefore if you want to use Mysql for Quickstart, please refer to Pinpoint Web's [applicationContext-dao-config.xml
-](../web/src/main/resources/applicationContext-dao-config.xml
-), [jdbc.properties](../web/src/main/resources/jdbc.properties).  
+](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/applicationContext-dao-config.xml
+), [jdbc.properties](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/jdbc.properties).  
 
 ---
 
@@ -196,15 +205,15 @@ alarm batch는 기본적으로 3분에 한번씩 동작이 된다. 최근 5분�
 ## 1. Alarm 기능 사용 방법
 
 1) 설정 화면으로 이동
-![alarm_figure01.gif](img/alarm/alarm_figure01.gif)
+![alarm_figure01.gif](images/alarm/alarm_figure01.gif)
 2) user를 등록 
-![alarm_figure02.gif](img/alarm/alarm_figure02.gif)
+![alarm_figure02.gif](images/alarm/alarm_figure02.gif)
 3) userGroup을 생성
-![alarm_figure03.gif](img/alarm/alarm_figure03.gif)
+![alarm_figure03.gif](images/alarm/alarm_figure03.gif)
 4) userGroup에 member를 등록
-![alarm_figure04.gif](img/alarm/alarm_figure04.gif)
+![alarm_figure04.gif](images/alarm/alarm_figure04.gif)
 5) alarm rule을 등록 
-![alarm_figure05.gif](img/alarm/alarm_figure05.gif)
+![alarm_figure05.gif](images/alarm/alarm_figure05.gif)
 
 alarm rule에 대한 설명은 아래를 참고하시오. 
 
@@ -339,14 +348,14 @@ jdbc.url=jdbc:mysql://localhost:13306/pinpoint?characterEncoding=UTF-8
 jdbc.username=admin
 jdbc.password=admin
 ```
-필요한 table 생성 - *[CreateTableStatement-mysql.sql](../web/src/main/resources/sql/CreateTableStatement-mysql.sql)*, *[SpringBatchJobReositorySchema-mysql.sql](../web/src/main/resources/sql/SpringBatchJobRepositorySchema-mysql.sql)*
+필요한 table 생성 - *[CreateTableStatement-mysql.sql](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/sql/CreateTableStatement-mysql.sql)*, *[SpringBatchJobReositorySchema-mysql.sql](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/sql/SpringBatchJobRepositorySchema-mysql.sql)*
 
 ## 3. 기타
 **1) alarm batch를 별도 프로세스로 실행하는 것도 가능하다.**
-pinpoint-web 프로젝트의 *[applicationContext-alarmJob.xml](../web/src/main/resources/batch/applicationContext-alarmJob.xml)* 파일을 이용해서 spring batch job을 실행하면 된다.
+pinpoint-web 프로젝트의 *[applicationContext-alarmJob.xml](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/batch/applicationContext-alarmJob.xml)* 파일을 이용해서 spring batch job을 실행하면 된다.
 실행 방법은 대한 구체적인 방법은 spirng batch 메뉴얼을 참고하자.
 
-**2) batch의 동작 주기를 조정하고 싶다면 *[applicationContext-batch-schedule.xml](../web/src/main/resources/batch/applicationContext-batch-schedule.xml)* 파일의 cron expression을 수정하면 된다.**
+**2) batch의 동작 주기를 조정하고 싶다면 *[applicationContext-batch-schedule.xml](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/batch/applicationContext-batch-schedule.xml)* 파일의 cron expression을 수정하면 된다.**
 ```
 <task:scheduled-tasks scheduler="scheduler">
     <task:scheduled ref="batchJobLauncher" method="alarmJob" cron="0 0/3 * * * *" />
@@ -357,12 +366,12 @@ pinpoint-web 프로젝트의 *[applicationContext-alarmJob.xml](../web/src/main/
 alarm batch 성능 튜닝을 위해서 병렬로 동작이 가능하도록 구현을 해놨다.
 그래서 아래에서 언급된 조건에 해당하는 경우 설정값을 조정한다면 성능을 향상 시킬수 있다. 단 병렬성을 높이면 리소스의 사용률이 높아지는것은 감안해야한다.  
 	
-alarm이 등록된 application의 개수가 많다면 *[applicationContext-batch.xml](../web/src/main/resources/batch/applicationContext-batch.xml)* 파일의 poolTaskExecutorForPartition의 pool size를 늘려주면 된다.
+alarm이 등록된 application의 개수가 많다면 *[applicationContext-batch.xml](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/batch/applicationContext-batch.xml)* 파일의 poolTaskExecutorForPartition의 pool size를 늘려주면 된다.
 ``` 
 <task:executor id="poolTaskExecutorForPartition" pool-size="1" />
 ```
 
-application 각각마다 등록된 alarm의 개수가 많다면 *[applicationContext-batch.xml](../web/src/main/resources/batch/applicationContext-batch.xml)* 파일에 선언된 alarmStep이 병렬로 동작되도록 설정하면 된다.
+application 각각마다 등록된 alarm의 개수가 많다면 *[applicationContext-batch.xml](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/batch/applicationContext-batch.xml)* 파일에 선언된 alarmStep이 병렬로 동작되도록 설정하면 된다.
 ```
 <step id="alarmStep" xmlns="http://www.springframework.org/schema/batch">
     <tasklet task-executor="poolTaskExecutorForStep" throttle-limit="3">
@@ -375,5 +384,5 @@ application 각각마다 등록된 alarm의 개수가 많다면 *[applicationCon
 **4) quickstart web을 사용한다면.**
 pinpoint web은 mockDAO를 사용하기 때문에 pinpont web의 설정들을 참고해서 기능을 사용해야한다.
 [applicationContext-dao-config.xml
-](../web/src/main/resources/applicationContext-dao-config.xml
-), [jdbc.properties](../web/src/main/resources/jdbc.properties).  
+](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/applicationContext-dao-config.xml
+), [jdbc.properties](https://github.com/naver/pinpoint/blob/master/web/src/main/resources/jdbc.properties).  

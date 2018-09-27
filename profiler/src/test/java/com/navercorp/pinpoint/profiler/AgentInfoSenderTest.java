@@ -38,9 +38,11 @@ import com.navercorp.pinpoint.rpc.packet.PingPayloadPacket;
 import com.navercorp.pinpoint.rpc.packet.RequestPacket;
 import com.navercorp.pinpoint.rpc.packet.SendPacket;
 import com.navercorp.pinpoint.rpc.server.PinpointServer;
-import com.navercorp.pinpoint.rpc.server.PinpointServerAcceptor;
 import com.navercorp.pinpoint.rpc.server.ServerMessageListener;
 import com.navercorp.pinpoint.rpc.server.ServerMessageListenerFactory;
+import com.navercorp.pinpoint.test.server.TestPinpointServerAcceptor;
+import com.navercorp.pinpoint.test.utils.TestAwaitTaskUtils;
+import com.navercorp.pinpoint.test.utils.TestAwaitUtils;
 import com.navercorp.pinpoint.thrift.dto.TResult;
 import com.navercorp.pinpoint.thrift.io.HeaderTBaseSerializer;
 import com.navercorp.pinpoint.thrift.io.HeaderTBaseSerializerFactory;
@@ -68,9 +70,6 @@ import static org.junit.Assert.assertTrue;
 
 public class AgentInfoSenderTest {
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-    public static final int PORT = SocketUtils.findAvailableTcpPort(50050);
     public static final String HOST = "127.0.0.1";
 
     private final int awaitSpinDelay = 50;
@@ -90,8 +89,8 @@ public class AgentInfoSenderTest {
         agentInfoFactory = new AgentInfoFactory(agentInformation, serverMetaDataRegistryService, jvmInformation);
     }
 
-    private TcpDataSender newTcpDataSender(PinpointClientFactory clientFactory) {
-        return new TcpDataSender(this.getClass().getName(), HOST, PORT, clientFactory);
+    private TcpDataSender newTcpDataSender(PinpointClientFactory clientFactory, int port) {
+        return new TcpDataSender(this.getClass().getName(), HOST, port, clientFactory);
     }
 
     @Test
@@ -101,16 +100,19 @@ public class AgentInfoSenderTest {
         final ResponseServerMessageListenerFactory messageListenerFactory = new ResponseServerMessageListenerFactory();
         ResponseServerMessageListener messageListener = messageListenerFactory.create();
 
-        PinpointServerAcceptor serverAcceptor = createServerAcceptor(messageListenerFactory);
+        TestPinpointServerAcceptor testPinpointServerAcceptor = new TestPinpointServerAcceptor(messageListenerFactory);
+        int bindPort = testPinpointServerAcceptor.bind();
+
         PinpointClientFactory clientFactory = createPinpointClientFactory();
-        TcpDataSender dataSender = newTcpDataSender(clientFactory);
+        TcpDataSender dataSender = newTcpDataSender(clientFactory, bindPort);
         AgentInfoSender agentInfoSender = new AgentInfoSender.Builder(dataSender, agentInfoFactory).sendInterval(agentInfoSendRetryIntervalMs).build();
 
         try {
             agentInfoSender.start();
             waitExpectedRequestCount(messageListener, 1);
         } finally {
-            closeAll(serverAcceptor, agentInfoSender, clientFactory);
+            closeAll(agentInfoSender, clientFactory);
+            testPinpointServerAcceptor.close();
         }
         assertEquals(1, messageListener.getRequestCount());
         assertEquals(1, messageListener.getSuccessCount());
@@ -125,10 +127,11 @@ public class AgentInfoSenderTest {
         final ResponseServerMessageListenerFactory messageListenerFactory = new ResponseServerMessageListenerFactory(expectedTriesUntilSuccess);
         ResponseServerMessageListener messageListener = messageListenerFactory.create();
 
-        PinpointServerAcceptor serverAcceptor = createServerAcceptor(messageListenerFactory);
+        TestPinpointServerAcceptor testPinpointServerAcceptor = new TestPinpointServerAcceptor(messageListenerFactory);
+        int bindPort = testPinpointServerAcceptor.bind();
 
         PinpointClientFactory socketFactory = createPinpointClientFactory();
-        TcpDataSender dataSender = newTcpDataSender(socketFactory);
+        TcpDataSender dataSender = newTcpDataSender(socketFactory, bindPort);
         AgentInfoSender agentInfoSender = new AgentInfoSender.Builder(dataSender, agentInfoFactory)
                 .maxTryPerAttempt(maxTryPerAttempt)
                 .sendInterval(agentInfoSendRetryIntervalMs)
@@ -138,7 +141,8 @@ public class AgentInfoSenderTest {
             agentInfoSender.start();
             waitExpectedRequestCount(messageListener, expectedTriesUntilSuccess);
         } finally {
-            closeAll(serverAcceptor, agentInfoSender, socketFactory);
+            closeAll(agentInfoSender, socketFactory);
+            testPinpointServerAcceptor.close();
         }
         assertEquals(expectedTriesUntilSuccess, messageListener.getRequestCount());
         assertEquals(1, messageListener.getSuccessCount());
@@ -153,10 +157,11 @@ public class AgentInfoSenderTest {
         final ResponseServerMessageListenerFactory messageListenerFactory = new ResponseServerMessageListenerFactory(expectedTriesUntilSuccess);
         ResponseServerMessageListener messageListener = messageListenerFactory.create();
 
-        PinpointServerAcceptor serverAcceptor = createServerAcceptor(messageListenerFactory);
+        TestPinpointServerAcceptor testPinpointServerAcceptor = new TestPinpointServerAcceptor(messageListenerFactory);
+        int bindPort = testPinpointServerAcceptor.bind();
 
         PinpointClientFactory socketFactory = createPinpointClientFactory();
-        TcpDataSender dataSender = newTcpDataSender(socketFactory);
+        TcpDataSender dataSender = newTcpDataSender(socketFactory, bindPort);
         AgentInfoSender agentInfoSender = new AgentInfoSender.Builder(dataSender, agentInfoFactory)
                 .maxTryPerAttempt(maxTryPerAttempt)
                 .sendInterval(agentInfoSendRetryIntervalMs)
@@ -166,7 +171,8 @@ public class AgentInfoSenderTest {
             agentInfoSender.start();
             waitExpectedRequestCount(messageListener, expectedTriesUntilSuccess);
         } finally {
-            closeAll(serverAcceptor, agentInfoSender, socketFactory);
+            closeAll(agentInfoSender, socketFactory);
+            testPinpointServerAcceptor.close();
         }
         assertEquals(expectedTriesUntilSuccess, messageListener.getRequestCount());
         assertEquals(1, messageListener.getSuccessCount());
@@ -185,12 +191,14 @@ public class AgentInfoSenderTest {
         final ResponseServerMessageListenerFactory successMessageListenerFactory = new ResponseServerMessageListenerFactory();
         ResponseServerMessageListener successMessageListener = successMessageListenerFactory.create();
 
-        PinpointServerAcceptor successServerAcceptor = createServerAcceptor(successMessageListenerFactory);
-        PinpointServerAcceptor failServerAcceptor = null;
+        TestPinpointServerAcceptor testPinpointServerAcceptor = new TestPinpointServerAcceptor(successMessageListenerFactory);
+        int bindPort = testPinpointServerAcceptor.bind();
+
+        TestPinpointServerAcceptor failTestPinpointServerAcceptor = null;
 
         PinpointClientFactory socketFactory = createPinpointClientFactory();
 
-        TcpDataSender dataSender = newTcpDataSender(socketFactory);
+        TcpDataSender dataSender = newTcpDataSender(socketFactory, bindPort);
         dataSender.addReconnectEventListener(new PinpointClientReconnectEventListener() {
             @Override
             public void reconnectPerformed(PinpointClient client) {
@@ -209,15 +217,19 @@ public class AgentInfoSenderTest {
         try {
             agentInfoSender.start();
             waitExpectedRequestCount(successMessageListener, expectedSuccessServerTries);
-            successServerAcceptor.close();
+            testPinpointServerAcceptor.close();
             Thread.sleep(agentInfoSendRetryIntervalMs * maxTryPerAttempt);
-            failServerAcceptor = createServerAcceptor(failMessageListenerFactory);
+
+            failTestPinpointServerAcceptor = new TestPinpointServerAcceptor(failMessageListenerFactory);
+            failTestPinpointServerAcceptor.bind(bindPort);
+
             // wait till agent reconnects
             agentReconnectLatch.await();
             waitExpectedRequestCount(failMessageListener, expectedFailServerTries);
-            failServerAcceptor.close();
         } finally {
-            closeAll(null, agentInfoSender, socketFactory);
+            closeAll(agentInfoSender, socketFactory);
+            TestPinpointServerAcceptor.staticClose(failTestPinpointServerAcceptor);
+            TestPinpointServerAcceptor.staticClose(testPinpointServerAcceptor);
         }
         assertEquals(1, successMessageListener.getSuccessCount() + failMessageListener.getSuccessCount());
         assertEquals(expectedSuccessServerTries, successMessageListener.getRequestCount());
@@ -237,10 +249,11 @@ public class AgentInfoSenderTest {
         final ResponseServerMessageListenerFactory messageListenerFactory = new ResponseServerMessageListenerFactory();
         ResponseServerMessageListener messageListener = messageListenerFactory.create();
 
-        PinpointServerAcceptor serverAcceptor = createServerAcceptor(messageListenerFactory);
+        TestPinpointServerAcceptor testPinpointServerAcceptor = new TestPinpointServerAcceptor(messageListenerFactory);
+        int bindPort = testPinpointServerAcceptor.bind();
 
         PinpointClientFactory clientFactory = createPinpointClientFactory();
-        TcpDataSender dataSender = newTcpDataSender(clientFactory);
+        TcpDataSender dataSender = newTcpDataSender(clientFactory, bindPort);
         dataSender.addReconnectEventListener(new PinpointClientReconnectEventListener() {
             @Override
             public void reconnectPerformed(PinpointClient client) {
@@ -262,19 +275,22 @@ public class AgentInfoSenderTest {
             // initial connect
             agentInfoSender.start();
             waitExpectedRequestCount(messageListener, 1);
-            serverAcceptor.close();
+            testPinpointServerAcceptor.close();
             // reconnect
             for (int i = 0; i < expectedReconnectCount; i++) {
-                PinpointServerAcceptor reconnectServerAcceptor = createServerAcceptor(messageListenerFactory);
+                TestPinpointServerAcceptor reconnectPinpointServerAcceptor = new TestPinpointServerAcceptor(messageListenerFactory);
+                reconnectPinpointServerAcceptor.bind(bindPort);
+
                 // wait for agent to reconnect
                 reconnectEventBarrier.await();
                 // wait to see if AgentInfo is sent again (it shouldn't)
                 Thread.sleep(1000L);
-                reconnectServerAcceptor.close();
+                reconnectPinpointServerAcceptor.close();
                 reconnectEventBarrier.reset();
             }
         } finally {
-            closeAll(null, agentInfoSender, clientFactory);
+            closeAll(agentInfoSender, clientFactory);
+            testPinpointServerAcceptor.close();
         }
         assertEquals(1, messageListener.getSuccessCount());
         assertEquals(expectedReconnectCount, reconnectCount.get());
@@ -289,10 +305,11 @@ public class AgentInfoSenderTest {
         final ResponseServerMessageListenerFactory messageListenerFactory = new ResponseServerMessageListenerFactory();
         ResponseServerMessageListener messageListener = messageListenerFactory.create();
 
-        PinpointServerAcceptor serverAcceptor = createServerAcceptor(messageListenerFactory);
+        TestPinpointServerAcceptor testPinpointServerAcceptor = new TestPinpointServerAcceptor(messageListenerFactory);
+        int bindPort = testPinpointServerAcceptor.bind();
 
         PinpointClientFactory socketFactory = createPinpointClientFactory();
-        TcpDataSender dataSender = newTcpDataSender(socketFactory);
+        TcpDataSender dataSender = newTcpDataSender(socketFactory, bindPort);
         AgentInfoSender agentInfoSender = new AgentInfoSender.Builder(dataSender, agentInfoFactory)
                 .refreshInterval(agentInfoSendRefreshIntervalMs)
                 .sendInterval(agentInfoSendRetryIntervalMs)
@@ -304,7 +321,8 @@ public class AgentInfoSenderTest {
                 Thread.sleep(1000L);
             }
         } finally {
-            closeAll(serverAcceptor, agentInfoSender, socketFactory);
+            closeAll(agentInfoSender, socketFactory);
+            testPinpointServerAcceptor.close();
         }
         assertTrue(messageListener.getRequestCount() >= expectedRefreshCount);
         assertTrue(messageListener.getSuccessCount() >= expectedRefreshCount);
@@ -319,11 +337,12 @@ public class AgentInfoSenderTest {
         final ResponseServerMessageListenerFactory messageListenerFactory = new ResponseServerMessageListenerFactory();
         ResponseServerMessageListener messageListener = messageListenerFactory.create();
 
-        PinpointServerAcceptor serverAcceptor = createServerAcceptor(messageListenerFactory);
+        TestPinpointServerAcceptor testPinpointServerAcceptor = new TestPinpointServerAcceptor(messageListenerFactory);
+        int bindPort = testPinpointServerAcceptor.bind();
 
         PinpointClientFactory clientFactory = createPinpointClientFactory();
 
-        TcpDataSender dataSender = newTcpDataSender(clientFactory);
+        TcpDataSender dataSender = newTcpDataSender(clientFactory, bindPort);
         final AgentInfoSender agentInfoSender = new AgentInfoSender.Builder(dataSender, agentInfoFactory).sendInterval(agentInfoSendRetryIntervalMs).build();
         serverMetaDataRegistryService.addListener(new ServerMetaDataRegistryService.OnChangeListener() {
             @Override
@@ -340,7 +359,8 @@ public class AgentInfoSenderTest {
 
             waitExpectedRequestCount(messageListener, expectedRequestCount);
         } finally {
-            closeAll(serverAcceptor, agentInfoSender, clientFactory);
+            closeAll(agentInfoSender, clientFactory);
+            testPinpointServerAcceptor.close();
         }
         // Then
         assertEquals(expectedRequestCount, messageListener.getRequestCount());
@@ -361,11 +381,12 @@ public class AgentInfoSenderTest {
         final ResponseServerMessageListenerFactory messageListenerFactory = new ResponseServerMessageListenerFactory();
         ResponseServerMessageListener messageListener = messageListenerFactory.create();
 
-        PinpointServerAcceptor serverAcceptor = createServerAcceptor(messageListenerFactory);
+        TestPinpointServerAcceptor testPinpointServerAcceptor = new TestPinpointServerAcceptor(messageListenerFactory);
+        int bindPort = testPinpointServerAcceptor.bind();
 
         PinpointClientFactory clientFactory = createPinpointClientFactory();
 
-        TcpDataSender dataSender = newTcpDataSender(clientFactory);
+        TcpDataSender dataSender = newTcpDataSender(clientFactory, bindPort);
         final AgentInfoSender agentInfoSender = new AgentInfoSender.Builder(dataSender, agentInfoFactory).sendInterval(agentInfoSendRetryIntervalMs).build();
         serverMetaDataRegistryService.addListener(new ServerMetaDataRegistryService.OnChangeListener() {
             @Override
@@ -402,7 +423,8 @@ public class AgentInfoSenderTest {
             waitExpectedRequestCount(messageListener, threadCount);
             waitExpectedSuccessCount(messageListener, threadCount);
         } finally {
-            closeAll(serverAcceptor, agentInfoSender, clientFactory);
+            closeAll(agentInfoSender, clientFactory);
+            testPinpointServerAcceptor.close();
         }
         // Then
         assertTrue("Failed with exceptions : " + exceptions, exceptions.isEmpty());
@@ -422,7 +444,9 @@ public class AgentInfoSenderTest {
 
         PinpointClientFactory clientFactory = createPinpointClientFactory();
 
-        TcpDataSender dataSender = newTcpDataSender(clientFactory);
+        int availableTcpPort = SocketUtils.findAvailableTcpPort(47000);
+
+        TcpDataSender dataSender = newTcpDataSender(clientFactory, availableTcpPort);
         AgentInfoSender agentInfoSender = new AgentInfoSender.Builder(dataSender, agentInfoFactory)
                 .sendInterval(agentInfoSendRetryIntervalMs)
                 .maxTryPerAttempt(maxTryPerAttempt)
@@ -441,41 +465,27 @@ public class AgentInfoSenderTest {
             }
 
         } finally {
-            closeAll(null, agentInfoSender, clientFactory);
+            closeAll(agentInfoSender, clientFactory);
         }
         assertEquals(1, messageListener.getSuccessCount());
         assertEquals(expectedTriesUntilSuccess, messageListener.getRequestCount());
     }
 
-    private PinpointServerAcceptor createServerAcceptor(ServerMessageListenerFactory messageListenerFactory) {
-        PinpointServerAcceptor serverAcceptor = new PinpointServerAcceptor();
-        // server.setMessageListener(new
-        // NoResponseServerMessageListener(requestCount));
-        serverAcceptor.setMessageListenerFactory(messageListenerFactory);
-        serverAcceptor.bind(HOST, PORT);
-
-        return serverAcceptor;
-    }
-
     private void createAndDeleteServer(ServerMessageListenerFactory messageListenerFactory, long waitTimeMillis) throws InterruptedException {
-        PinpointServerAcceptor server = null;
+        int availableTcpPort = SocketUtils.findAvailableTcpPort(47000);
+
+        TestPinpointServerAcceptor testPinpointServerAcceptor = new TestPinpointServerAcceptor(messageListenerFactory);
         try {
-            server = createServerAcceptor(messageListenerFactory);
+            testPinpointServerAcceptor.bind(availableTcpPort);
             Thread.sleep(waitTimeMillis);
         } finally {
-            if (server != null) {
-                server.close();
-            }
+            TestPinpointServerAcceptor.staticClose(testPinpointServerAcceptor);
         }
     }
 
-    private void closeAll(PinpointServerAcceptor serverAcceptor, AgentInfoSender agentInfoSender, PinpointClientFactory factory) {
+    private void closeAll(AgentInfoSender agentInfoSender, PinpointClientFactory factory) {
         if (agentInfoSender != null) {
             agentInfoSender.stop();
-        }
-
-        if (serverAcceptor != null) {
-            serverAcceptor.close();
         }
 
         if (factory != null) {
