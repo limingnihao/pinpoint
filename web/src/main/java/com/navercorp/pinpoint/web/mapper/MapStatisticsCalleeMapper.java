@@ -125,10 +125,15 @@ public class MapStatisticsCalleeMapper implements RowMapper<LinkDataMap> {
         // Caller may be a user node, and user nodes may call nodes with the same application name but different service type.
         // To distinguish between these user nodes, append callee's service type to the application name.
         String callerApplicationName;
-        if (registry.findServiceType(callerServiceType).isUser()) {
-            callerApplicationName = ApplicationMapStatisticsUtils.getDestApplicationNameFromColumnNameForUser(qualifier, calleeServiceType);
-        } else {
-            callerApplicationName = ApplicationMapStatisticsUtils.getDestApplicationNameFromColumnName(qualifier);
+		// shiming.li update
+        try {
+            if (registry.findServiceType(callerServiceType).isUser()) {
+                callerApplicationName = ApplicationMapStatisticsUtils.getDestApplicationNameFromColumnNameForUser(qualifier, calleeServiceType);
+            } else {
+                callerApplicationName = ApplicationMapStatisticsUtils.getDestApplicationNameFromColumnName(qualifier);
+            }
+        } catch (Exception e) {
+            callerApplicationName = ApplicationMapStatisticsUtils.getHost(qualifier).split("^")[0];
         }
         return this.applicationFactory.createApplication(callerApplicationName, callerServiceType);
     }

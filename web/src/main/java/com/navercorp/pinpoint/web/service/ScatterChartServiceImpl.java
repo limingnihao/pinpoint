@@ -118,14 +118,20 @@ public class ScatterChartServiceImpl implements ScatterChartService {
             } else {
                 // for recursive calls, we need to identify which of the spans was selected.
                 // pick only the spans with the same transactionId, collectorAcceptor, and responseTime
+//                for (SpanBo span : spans) {
+//
+//                    // should find the filtering condition with the correct index
+//                    final TransactionMetadataQuery.QueryCondition filterQueryCondition = query.getQueryConditionByIndex(index);
+//
+//                    final TransactionId transactionId = span.getTransactionId();
+//                    final TransactionMetadataQuery.QueryCondition queryConditionKey = new TransactionMetadataQuery.QueryCondition(transactionId, span.getCollectorAcceptTime(), span.getElapsed());
+//                    if (queryConditionKey.equals(filterQueryCondition)) {
+//                        result.add(span);
+//                    }
+//                }
+                // shiming.li修改，取parentId=0的那个
                 for (SpanBo span : spans) {
-
-                    // should find the filtering condition with the correct index
-                    final TransactionMetadataQuery.QueryCondition filterQueryCondition = query.getQueryConditionByIndex(index);
-
-                    final TransactionId transactionId = span.getTransactionId();
-                    final TransactionMetadataQuery.QueryCondition queryConditionKey = new TransactionMetadataQuery.QueryCondition(transactionId, span.getCollectorAcceptTime(), span.getElapsed());
-                    if (queryConditionKey.equals(filterQueryCondition)) {
+                    if (span.getParentSpanId() == -1 || span.getParentSpanId() == 0) {
                         result.add(span);
                     }
                 }

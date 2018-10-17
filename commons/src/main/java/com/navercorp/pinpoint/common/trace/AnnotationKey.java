@@ -158,8 +158,8 @@ public interface AnnotationKey {
 
     AnnotationKey SQL_ID = AnnotationKeyFactory.of(20, "SQL-ID");
     AnnotationKey SQL = AnnotationKeyFactory.of(21, "SQL", VIEW_IN_RECORD_SET);
-    AnnotationKey SQL_METADATA = AnnotationKeyFactory.of(22, "SQL-METADATA");
-    AnnotationKey SQL_PARAM = AnnotationKeyFactory.of(23, "SQL-PARAM");
+    AnnotationKey SQL_METADATA = AnnotationKeyFactory.of(22, "SQL-METADATA", VIEW_IN_RECORD_SET);
+    AnnotationKey SQL_PARAM = AnnotationKeyFactory.of(23, "SQL-PARAM", VIEW_IN_RECORD_SET);
     AnnotationKey SQL_BINDVALUE = AnnotationKeyFactory.of(24, "SQL-BindValue", VIEW_IN_RECORD_SET);
 
     AnnotationKey STRING_ID = AnnotationKeyFactory.of(30, "STRING_ID");
@@ -208,5 +208,12 @@ public interface AnnotationKey {
     AnnotationKey ASYNC = AnnotationKeyFactory.of(-100, "Asynchronous Invocation", VIEW_IN_RECORD_SET);
 
     AnnotationKey PROXY_HTTP_HEADER = AnnotationKeyFactory.of(300, "PROXY_HTTP_HEADER", VIEW_IN_RECORD_SET);
-    AnnotationKey REDIS_IO = AnnotationKeyFactory.of(310, "redis.io");
+
+
+    AnnotationKey REDIS_IO = AnnotationKeyFactory.of(310, "redis.io", VIEW_IN_RECORD_SET);
+
+    AnnotationKey REDIS_IP = AnnotationKeyFactory.of(311, "redis.ip", VIEW_IN_RECORD_SET);
+
+    AnnotationKey REDIS_PARAM = AnnotationKeyFactory.of(312, "redis.param", VIEW_IN_RECORD_SET);
+
 }

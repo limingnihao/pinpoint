@@ -75,8 +75,7 @@ public class SpanHandler implements SimpleHandler {
         }
     }
 
-
-    private void handleSimple(TBase<?, ?> tbase) {
+    public void handleSimple(TBase<?, ?> tbase) {
 
         if (!(tbase instanceof TSpan)) {
             throw new IllegalArgumentException("unexpected tbase:" + tbase + " expected:" + this.getClass().getName());

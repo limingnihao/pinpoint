@@ -56,16 +56,21 @@ public class ApiDescriptionParser {
         }
 
         final int classIndex = apiDescriptionString.lastIndexOf(DOT, methodStart);
+        ApiDescription api = new DefaultApiDescription();
+
+        // shiming 修改
         if (classIndex == -1) {
-            throw new IllegalArgumentException("'.' not found. invalid apiDescriptionString:" + apiDescriptionString);
+            // throw new IllegalArgumentException("'.' not found. invalid apiDescriptionString:" + apiDescriptionString);
+            api.setClassName("");
+            api.setMethodName(apiDescriptionString);
+        } else {
+            String className = parseClassName(apiDescriptionString, classIndex);
+            api.setClassName(className);
+
+            String methodName = parseMethodName(apiDescriptionString, methodStart, classIndex);
+            api.setMethodName(methodName);
         }
 
-        String className = parseClassName(apiDescriptionString, classIndex);
-        ApiDescription api = new DefaultApiDescription();
-        api.setClassName(className);
-
-        String methodName = parseMethodName(apiDescriptionString, methodStart, classIndex);
-        api.setMethodName(methodName);
 
         String parameterDescriptor = apiDescriptionString.substring(methodStart + 1, methodEnd);
         String[] parameterList = parseParameter(parameterDescriptor);

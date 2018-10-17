@@ -66,7 +66,7 @@ public class AgentInfoHandler implements SimpleHandler, RequestResponseHandler {
         }
     }
 
-    private TBase<?, ?> handleRequest(TBase<?, ?> tbase) {
+    public TBase<?, ?> handleRequest(TBase<?, ?> tbase) {
         if (!(tbase instanceof TAgentInfo)) {
             logger.warn("invalid tbase:{}", tbase);
             // it happens to return null  not only at this BO(Business Object) but also at other BOs.

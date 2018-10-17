@@ -60,7 +60,7 @@ public class AgentStatHandlerV2 implements SimpleHandler {
         }
     }
 
-    void handleSimple(TBase<?, ?> tBase) {
+    public void handleSimple(TBase<?, ?> tBase) {
         // FIXME (2014.08) Legacy - TAgentStat should not be sent over the wire.
         if (tBase instanceof TAgentStat) {
             TAgentStat tAgentStat = (TAgentStat)tBase;

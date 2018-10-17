@@ -97,9 +97,12 @@
         <constructor-arg ref="typeLoaderService"/>
         <constructor-arg ref="slf4jCommonLoggerFactory"/>
     </bean>
-    
+
+    <bean id="spanAlignerNextSpanPlugin" class="com.navercorp.pinpoint.web.plugin.SpanAlignerNextSpanPlugin"/>
+
     <bean id="spanServiceImpl" class="com.navercorp.pinpoint.web.service.SpanServiceImpl">
         <property name="sqlMetaDataDao" ref="hbaseSqlMetaDataDao"/>
+        <property name="spanAlignerNextSpanPlugin" ref="spanAlignerNextSpanPlugin"/>
     </bean>
     
     <bean id="hbaseSqlMetaDataDao" class="com.navercorp.pinpoint.web.dao.hbase.HbaseSqlMetaDataDao">

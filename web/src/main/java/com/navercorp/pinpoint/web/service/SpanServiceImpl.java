@@ -41,6 +41,7 @@ import com.navercorp.pinpoint.web.dao.ApiMetaDataDao;
 import com.navercorp.pinpoint.web.dao.SqlMetaDataDao;
 import com.navercorp.pinpoint.web.dao.StringMetaDataDao;
 import com.navercorp.pinpoint.web.dao.TraceDao;
+import com.navercorp.pinpoint.web.plugin.SpanAlignerNextSpanPlugin;
 import com.navercorp.pinpoint.web.security.MetaDataFilter;
 import com.navercorp.pinpoint.web.security.MetaDataFilter.MetaData;
 
@@ -77,11 +78,17 @@ public class SpanServiceImpl implements SpanService {
     @Autowired
     private StringMetaDataDao stringMetaDataDao;
 
+    private SpanAlignerNextSpanPlugin spanAlignerNextSpanPlugin;
+
     private final SqlParser sqlParser = new DefaultSqlParser();
     private final OutputParameterParser outputParameterParser = new OutputParameterParser();
 
     public void setSqlMetaDataDao(SqlMetaDataDao sqlMetaDataDao) {
         this.sqlMetaDataDao = sqlMetaDataDao;
+    }
+
+    public void setSpanAlignerNextSpanPlugin(SpanAlignerNextSpanPlugin spanAlignerNextSpanPlugin) {
+        this.spanAlignerNextSpanPlugin = spanAlignerNextSpanPlugin;
     }
 
     @Override
@@ -402,7 +409,9 @@ public class SpanServiceImpl implements SpanService {
     }
 
     private SpanResult order(List<SpanBo> spans, long selectedSpanHint) {
-        SpanAligner spanAligner = new SpanAligner(spans, selectedSpanHint);
+        // shiming.li修改，重新处理span的关系
+        List<SpanBo> newSpans = spanAlignerNextSpanPlugin.process(spans);
+        SpanAligner spanAligner = new SpanAligner(newSpans, selectedSpanHint);
         final CallTree callTree = spanAligner.align();
 
         return new SpanResult(spanAligner.getMatchType(), callTree.iterator());
