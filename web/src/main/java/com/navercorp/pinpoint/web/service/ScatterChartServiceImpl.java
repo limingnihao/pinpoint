@@ -21,6 +21,7 @@ import com.navercorp.pinpoint.common.util.TransactionId;
 import com.navercorp.pinpoint.web.dao.ApplicationTraceIndexDao;
 import com.navercorp.pinpoint.web.dao.TraceDao;
 import com.navercorp.pinpoint.web.filter.Filter;
+import com.navercorp.pinpoint.web.plugin.PluginScatterChartService;
 import com.navercorp.pinpoint.web.scatter.ScatterData;
 import com.navercorp.pinpoint.web.vo.Range;
 import com.navercorp.pinpoint.web.vo.SelectedScatterArea;
@@ -50,6 +51,9 @@ public class ScatterChartServiceImpl implements ScatterChartService {
     @Autowired
     @Qualifier("hbaseTraceDaoFactory")
     private TraceDao traceDao;
+
+    @Autowired
+    private PluginScatterChartService pluginScatterChartService;
 
     @Override
     public List<Dot> selectScatterData(String applicationName, SelectedScatterArea area, TransactionId offsetTransactionId, int offsetTransactionElapsed, int limit) {
@@ -109,36 +113,34 @@ public class ScatterChartServiceImpl implements ScatterChartService {
 
         final List<SpanBo> result = new ArrayList<>(query.size());
         int index = 0;
-        for (List<SpanBo> spans : selectedSpans) {
-            if (spans.isEmpty()) {
-                // span data does not exist in storage - skip
-            } else if (spans.size() == 1) {
-                // case with a single unique span data
-                result.add(spans.get(0));
-            } else {
-                // for recursive calls, we need to identify which of the spans was selected.
-                // pick only the spans with the same transactionId, collectorAcceptor, and responseTime
-//                for (SpanBo span : spans) {
-//
-//                    // should find the filtering condition with the correct index
-//                    final TransactionMetadataQuery.QueryCondition filterQueryCondition = query.getQueryConditionByIndex(index);
-//
-//                    final TransactionId transactionId = span.getTransactionId();
-//                    final TransactionMetadataQuery.QueryCondition queryConditionKey = new TransactionMetadataQuery.QueryCondition(transactionId, span.getCollectorAcceptTime(), span.getElapsed());
-//                    if (queryConditionKey.equals(filterQueryCondition)) {
-//                        result.add(span);
-//                    }
-//                }
-                // shiming.li修改，取parentId=0的那个
-                for (SpanBo span : spans) {
-                    if (span.getParentSpanId() == -1 || span.getParentSpanId() == 0) {
-                        result.add(span);
+        // shiming.li修改，
+        if (this.pluginScatterChartService != null) {
+            return this.pluginScatterChartService.process(selectedSpans);
+        } else {
+            for (List<SpanBo> spans : selectedSpans) {
+                if (spans.isEmpty()) {
+                    // span data does not exist in storage - skip
+                } else if (spans.size() == 1) {
+                    // case with a single unique span data
+                    result.add(spans.get(0));
+                } else {
+                    // for recursive calls, we need to identify which of the spans was selected.
+                    // pick only the spans with the same transactionId, collectorAcceptor, and responseTime
+                    for (SpanBo span : spans) {
+
+                        // should find the filtering condition with the correct index
+                        final TransactionMetadataQuery.QueryCondition filterQueryCondition = query.getQueryConditionByIndex(index);
+
+                        final TransactionId transactionId = span.getTransactionId();
+                        final TransactionMetadataQuery.QueryCondition queryConditionKey = new TransactionMetadataQuery.QueryCondition(transactionId, span.getCollectorAcceptTime(), span.getElapsed());
+                        if (queryConditionKey.equals(filterQueryCondition)) {
+                            result.add(span);
+                        }
                     }
                 }
+                index++;
             }
-            index++;
         }
-
         return result;
     }
 

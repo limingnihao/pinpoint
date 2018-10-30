@@ -29,6 +29,21 @@
 
     <repositories>
         <repository>
+            <id>nexus-public</id>
+            <name>nexus-public</name>
+            <url>http://172.17.0.59:8081/nexus/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>Releases</id>
+            <name>Nexus Release Repository</name>
+            <url>http://172.17.0.59:8081/nexus/content/repositories/releases/</url>
+        </repository>
+        <repository>
+            <id>nexus-thirdparty</id>
+            <name>nexus-thirdparty</name>
+            <url>http://172.17.0.59:8081/nexus/content/repositories/thirdparty/</url>
+        </repository>
+        <repository>
             <id>cloudera</id>
             <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
         </repository>
@@ -618,7 +633,8 @@
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
-                <version>3.4.5-cdh5.7.5</version>
+                <!--<version>3.4.5-cdh5.7.5</version>-->
+                <version>3.4.5</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.jboss.netty</groupId>
@@ -915,6 +931,21 @@
                 <artifactId>maven-site-plugin</artifactId>
                 <version>3.7.1</version>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <attach>true</attach>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -974,8 +1005,6 @@
                     </excludes>
                 </configuration>
             </plugin>
-
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
@@ -1040,4 +1069,18 @@
             </build>
         </profile>
     </profiles>
+
+    <distributionManagement>
+        <repository>
+            <id>Releases</id>
+            <name>Nexus Release Repository</name>
+            <url>http://172.17.0.59:8081/nexus/content/repositories/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>Snapshots</id>
+            <name>Nexus Snapshot Repository</name>
+            <url>http://172.17.0.59:8081/nexus/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
 </project>
