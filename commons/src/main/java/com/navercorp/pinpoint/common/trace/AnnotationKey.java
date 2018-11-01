@@ -161,6 +161,7 @@ public interface AnnotationKey {
     AnnotationKey SQL_METADATA = AnnotationKeyFactory.of(22, "SQL-METADATA", VIEW_IN_RECORD_SET);
     AnnotationKey SQL_PARAM = AnnotationKeyFactory.of(23, "SQL-PARAM", VIEW_IN_RECORD_SET);
     AnnotationKey SQL_BINDVALUE = AnnotationKeyFactory.of(24, "SQL-BindValue", VIEW_IN_RECORD_SET);
+    AnnotationKey SQL_RESPONSE = AnnotationKeyFactory.of(23, "SQL-RESPONSE", VIEW_IN_RECORD_SET);
 
     AnnotationKey STRING_ID = AnnotationKeyFactory.of(30, "STRING_ID");
 
@@ -168,6 +169,8 @@ public interface AnnotationKey {
     AnnotationKey HTTP_URL = AnnotationKeyFactory.of(40, "http.url");
     AnnotationKey HTTP_PARAM = AnnotationKeyFactory.of(41, "http.param", VIEW_IN_RECORD_SET);
     AnnotationKey HTTP_PARAM_ENTITY = AnnotationKeyFactory.of(42, "http.entity", VIEW_IN_RECORD_SET);
+    AnnotationKey HTTP_RESPONSE = AnnotationKeyFactory.of(43, "http.response", VIEW_IN_RECORD_SET);
+
     AnnotationKey HTTP_COOKIE = AnnotationKeyFactory.of(45, "http.cookie", VIEW_IN_RECORD_SET);
     AnnotationKey HTTP_STATUS_CODE = AnnotationKeyFactory.of(46, "http.status.code", VIEW_IN_RECORD_SET);
     AnnotationKey HTTP_INTERNAL_DISPLAY = AnnotationKeyFactory.of(48, "http.internal.display");
@@ -215,5 +218,7 @@ public interface AnnotationKey {
     AnnotationKey REDIS_IP = AnnotationKeyFactory.of(311, "redis.ip", VIEW_IN_RECORD_SET);
 
     AnnotationKey REDIS_PARAM = AnnotationKeyFactory.of(312, "redis.param", VIEW_IN_RECORD_SET);
+
+    AnnotationKey REDIS_RESPONSE = AnnotationKeyFactory.of(313, "redis.param", VIEW_IN_RECORD_SET);
 
 }
