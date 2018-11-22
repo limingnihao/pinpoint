@@ -66,10 +66,10 @@ public class SpanServiceImpl implements SpanService {
     @Qualifier("hbaseTraceDaoFactory")
     private TraceDao traceDao;
 
-//    @Autowired
+    //    @Autowired
     private SqlMetaDataDao sqlMetaDataDao;
-    
-    @Autowired(required=false)
+
+    @Autowired(required = false)
     private MetaDataFilter metaDataFilter;
 
     @Autowired
@@ -102,10 +102,11 @@ public class SpanServiceImpl implements SpanService {
             return new SpanResult(SpanAligner.ERROR_MATCH, new CallTreeIterator(null));
         }
 
+
         final SpanResult result = order(spans, selectedSpanHint);
         final CallTreeIterator callTreeIterator = result.getCallTree();
         final List<SpanAlign> values = callTreeIterator.values();
-        
+
         transitionDynamicApiId(values);
         transitionSqlId(values);
         transitionCachedString(values);
@@ -114,6 +115,13 @@ public class SpanServiceImpl implements SpanService {
         return result;
     }
 
+    @Override
+    public List<SpanBo> selectSpanList(TransactionId transactionId) {
+        if (transactionId == null) {
+            throw new NullPointerException("transactionId must not be null");
+        }
+        return  traceDao.selectSpan(transactionId);
+    }
 
 
     private void transitionAnnotation(List<SpanAlign> spans, AnnotationReplacementCallback annotationReplacementCallback) {
@@ -399,7 +407,7 @@ public class SpanServiceImpl implements SpanService {
             return apiMetaDataBo.getApiInfo();
         }
     }
-    
+
     private String getApiTagInfo(ApiMetaDataBo apiMetaDataBo) {
         return apiMetaDataBo.getApiInfo();
     }

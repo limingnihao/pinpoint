@@ -16,11 +16,16 @@
 
 package com.navercorp.pinpoint.web.service;
 
+import com.navercorp.pinpoint.common.server.bo.SpanBo;
 import com.navercorp.pinpoint.common.util.TransactionId;
+
+import java.util.List;
 
 /**
  * @author emeroad
  */
 public interface SpanService {
     SpanResult selectSpan(TransactionId transactionId, long selectedSpanHint);
+
+    List<SpanBo> selectSpanList(TransactionId transactionId);
 }
